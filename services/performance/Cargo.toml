@@ -1,19 +1,19 @@
 [package]
 name = "nimmy-performance"
 version = "0.1.0"
-edition = "2024"
-description = "High-performance modules for Nimmy — audio processing, encryption, search"
+edition = "2021"
+description = "High-performance native engine for Nimmy — DSP audio processing, vector similarity, and FFI"
 
 [lib]
 name = "nimmy_performance"
-crate-type = ["cdylib", "staticlib"]  # For FFI with Flutter
+crate-type = ["cdylib", "staticlib", "rlib"]
 
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-# Audio processing (Phase 5)
-# hound = "3.5"
-# Encryption (Phase 5)
-# ring = "0.17"
-# Search (Phase 5)
-# tantivy = "0.22"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"

@@ -2,6 +2,8 @@
 // =====================================================
 import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/native/nimmy_bridge.dart';
+import '../../core/network/api_client.dart';
 import '../nimmy_orb/nimmy_orb_widget.dart';
 
 class VoiceScreen extends StatefulWidget {
@@ -13,8 +15,54 @@ class VoiceScreen extends StatefulWidget {
 
 class _VoiceScreenState extends State<VoiceScreen>
     with SingleTickerProviderStateMixin {
+  final NimmyApiClient _apiClient = NimmyApiClient();
   NimmyOrbState _orbState = NimmyOrbState.idle;
   bool _isRecording = false;
+  String _assistantReply = '';
+  String? _recordedFilePath;
+
+  Future<void> _handleStartRecording() async {
+    setState(() {
+      _isRecording = true;
+      _orbState = NimmyOrbState.listening;
+      _assistantReply = '';
+    });
+
+    final res = await NimmyNativeBridge.startVoiceRecording();
+    if (mounted && res['filePath'] != null) {
+      _recordedFilePath = res['filePath'] as String;
+    }
+  }
+
+  Future<void> _handleStopRecording() async {
+    setState(() {
+      _isRecording = false;
+      _orbState = NimmyOrbState.thinking;
+    });
+
+    final stopRes = await NimmyNativeBridge.stopVoiceRecording();
+    final bytes = stopRes['fileSizeBytes'] ?? 0;
+
+    // Send cognitive intent to Gateway / AI Brain
+    final chatRes = await _apiClient.sendChatMessage(
+      'Voice input captured ($bytes bytes PCM, path: ${_recordedFilePath ?? 'native stream'})',
+      sessionId: 'voice-session',
+    );
+
+    if (mounted) {
+      setState(() {
+        _assistantReply = chatRes['reply'] ?? 'Voice turn processed.';
+        _orbState = NimmyOrbState.speaking;
+      });
+
+      // Return to idle after speech presentation
+      Future.delayed(const Duration(seconds: 4), () {
+        if (mounted && _orbState == NimmyOrbState.speaking) {
+          setState(() => _orbState = NimmyOrbState.idle);
+        }
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -37,8 +85,8 @@ class _VoiceScreenState extends State<VoiceScreen>
                       size: 32,
                     ),
                   ),
-                  Text(
-                    'Nimmy',
+                  const Text(
+                    'Nimmy Voice Core',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
@@ -59,35 +107,47 @@ class _VoiceScreenState extends State<VoiceScreen>
             // Nimmy Orb (large, centered)
             Expanded(
               child: Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    NimmyOrbWidget(
-                      size: 220,
-                      state: _orbState,
-                    ),
-                    const SizedBox(height: 24),
-                    Text(
-                      _getStatusText(),
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w500,
-                        color: NimmyColors.textSecondary,
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      NimmyOrbWidget(
+                        size: 220,
+                        state: _orbState,
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    if (_orbState == NimmyOrbState.speaking)
+                      const SizedBox(height: 24),
                       Text(
-                        '"I\'ve added that to your tasks for tomorrow."',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: NimmyColors.textPrimary,
-                          fontStyle: FontStyle.italic,
-                          height: 1.4,
+                        _getStatusText(),
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w500,
+                          color: NimmyColors.textSecondary,
                         ),
                       ),
-                  ],
+                      const SizedBox(height: 12),
+                      if (_assistantReply.isNotEmpty)
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: NimmyColors.surface.withValues(alpha: 0.8),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: NimmyColors.purple.withValues(alpha: 0.3),
+                            ),
+                          ),
+                          child: Text(
+                            '"$_assistantReply"',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: 15,
+                              color: NimmyColors.textPrimary,
+                              height: 1.4,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -98,32 +158,23 @@ class _VoiceScreenState extends State<VoiceScreen>
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  // Keyboard button
+                  // Keyboard / chat fallback
                   _ControlButton(
                     icon: Icons.keyboard_rounded,
                     onTap: () {},
                   ),
 
-                  // Main mic button
+                  // Main mic button with native AudioRecord hooks
                   GestureDetector(
-                    onTapDown: (_) => setState(() {
-                      _isRecording = true;
-                      _orbState = NimmyOrbState.listening;
-                    }),
-                    onTapUp: (_) => setState(() {
-                      _isRecording = false;
-                      _orbState = NimmyOrbState.thinking;
-                      // Simulate thinking → speaking
-                      Future.delayed(const Duration(seconds: 2), () {
-                        if (mounted) {
-                          setState(() => _orbState = NimmyOrbState.speaking);
-                        }
+                    onTapDown: (_) => _handleStartRecording(),
+                    onTapUp: (_) => _handleStopRecording(),
+                    onTapCancel: () {
+                      NimmyNativeBridge.stopVoiceRecording();
+                      setState(() {
+                        _isRecording = false;
+                        _orbState = NimmyOrbState.idle;
                       });
-                    }),
-                    onTapCancel: () => setState(() {
-                      _isRecording = false;
-                      _orbState = NimmyOrbState.idle;
-                    }),
+                    },
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 200),
                       width: _isRecording ? 80 : 72,
@@ -156,10 +207,24 @@ class _VoiceScreenState extends State<VoiceScreen>
                     ),
                   ),
 
-                  // More options button
+                  // Native Android daemon status
                   _ControlButton(
-                    icon: Icons.more_horiz_rounded,
-                    onTap: () {},
+                    icon: Icons.graphic_eq_rounded,
+                    onTap: () async {
+                      final running = await NimmyNativeBridge.isServiceRunning();
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              running
+                                  ? 'Kotlin Native Service: ACTIVE'
+                                  : 'Kotlin Native Service: STANDBY',
+                            ),
+                            duration: const Duration(seconds: 2),
+                          ),
+                        );
+                      }
+                    },
                   ),
                 ],
               ),
@@ -173,17 +238,17 @@ class _VoiceScreenState extends State<VoiceScreen>
   String _getStatusText() {
     switch (_orbState) {
       case NimmyOrbState.idle:
-        return 'Tap & hold to speak';
+        return 'Hold mic to capture native voice';
       case NimmyOrbState.listening:
-        return 'Listening...';
+        return 'Listening (16kHz PCM)...';
       case NimmyOrbState.thinking:
-        return 'Processing...';
+        return 'Cognitive processing...';
       case NimmyOrbState.speaking:
-        return 'Nimmy says:';
+        return 'Nimmy response:';
       case NimmyOrbState.recording:
-        return 'Recording...';
+        return 'Recording buffer...';
       case NimmyOrbState.taskComplete:
-        return 'Done!';
+        return 'Task synchronized!';
     }
   }
 }

@@ -97,6 +97,16 @@ class SettingsScreen extends StatelessWidget {
             ),
 
             _SettingsSection(
+              title: 'Android Native Core (Kotlin)',
+              items: [
+                _SettingItem(Icons.android_rounded, 'Foreground Daemon', 'Active', NimmyColors.green),
+                _SettingItem(Icons.graphic_eq_rounded, 'AudioRecord Hardware', '16kHz PCM', NimmyColors.purple),
+                _SettingItem(Icons.alarm_on_rounded, 'AlarmManager Bridge', 'Enabled', NimmyColors.cyan),
+                _SettingItem(Icons.battery_charging_full_rounded, 'Device Telemetry', 'Synced', NimmyColors.amber),
+              ],
+            ),
+
+            _SettingsSection(
               title: 'Appearance',
               items: [
                 _SettingItem(Icons.dark_mode_rounded, 'Theme', 'Dark', NimmyColors.purple),
