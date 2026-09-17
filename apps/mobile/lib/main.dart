@@ -1,42 +1,54 @@
-// 🟣 NIMMY — Main Entry Point
-// ===========================
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'core/theme/app_theme.dart';
+import 'package:provider/provider.dart';
+
+import 'core/bootstrap/app_bootstrap.dart';
 import 'core/router/app_router.dart';
+import 'core/state/nimmy_controller.dart';
+import 'core/theme/app_theme.dart';
+import 'services/permissions/permission_service.dart';
+import 'services/voice/voice_service.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // Lock to portrait mode
-  SystemChrome.setPreferredOrientations([
+  await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
-
-  // Dark status bar
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
       statusBarIconBrightness: Brightness.light,
-      systemNavigationBarColor: Color(0xFF0A0A0F),
+      systemNavigationBarColor: NimmyColors.voidBlack,
       systemNavigationBarIconBrightness: Brightness.light,
     ),
   );
 
-  runApp(const NimmyApp());
+  final bootstrap = await AppBootstrap.create();
+  runApp(NimmyApp(bootstrap: bootstrap));
 }
 
 class NimmyApp extends StatelessWidget {
-  const NimmyApp({super.key});
+  const NimmyApp({super.key, required this.bootstrap});
+
+  final AppBootstrap bootstrap;
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp.router(
-      title: 'Nimmy',
-      debugShowCheckedModeBanner: false,
-      theme: NimmyTheme.darkTheme,
-      routerConfig: NimmyRouter.router,
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider<NimmyController>.value(
+          value: bootstrap.controller,
+        ),
+        Provider<VoiceService>.value(value: bootstrap.voiceService),
+        Provider<PermissionService>.value(value: bootstrap.permissionService),
+      ],
+      child: MaterialApp.router(
+        title: 'Nimmy',
+        debugShowCheckedModeBanner: false,
+        theme: NimmyTheme.darkTheme,
+        routerConfig: NimmyRouter.router,
+      ),
     );
   }
 }

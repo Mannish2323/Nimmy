@@ -1,158 +1,132 @@
-// 🟣 NIMMY — App Shell (Bottom Navigation)
-// ==========================================
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../core/theme/app_theme.dart';
 
 class AppShell extends StatelessWidget {
-  final Widget child;
   const AppShell({super.key, required this.child});
 
-  int _getSelectedIndex(BuildContext context) {
-    final location = GoRouterState.of(context).uri.path;
-    if (location.startsWith('/dashboard')) return 0;
-    if (location.startsWith('/tasks')) return 1;
-    if (location.startsWith('/calendar')) return 2;
-    if (location.startsWith('/notes')) return 3;
-    if (location.startsWith('/memory')) return 4;
-    return 0;
-  }
+  final Widget child;
 
-  void _onTap(BuildContext context, int index) {
-    switch (index) {
-      case 0:
-        context.go('/dashboard');
-      case 1:
-        context.go('/tasks');
-      case 2:
-        context.go('/calendar');
-      case 3:
-        context.go('/notes');
-      case 4:
-        context.go('/memory');
-    }
+  static const _destinations = [
+    ('/home', Icons.home_rounded, Icons.home_outlined, 'Home'),
+    ('/tasks', Icons.task_alt_rounded, Icons.task_alt_outlined, 'Tasks'),
+    ('/calendar', Icons.calendar_month_rounded, Icons.calendar_month_outlined, 'Calendar'),
+    ('/memory', Icons.auto_awesome_rounded, Icons.auto_awesome_outlined, 'Memory'),
+    ('/more', Icons.grid_view_rounded, Icons.grid_view_outlined, 'More'),
+  ];
+
+  int _selectedIndex(BuildContext context) {
+    final path = GoRouterState.of(context).uri.path;
+    final index = _destinations.indexWhere((item) => path.startsWith(item.$1));
+    return index < 0 ? 0 : index;
   }
 
   @override
   Widget build(BuildContext context) {
-    final selectedIndex = _getSelectedIndex(context);
-
+    final selected = _selectedIndex(context);
     return Scaffold(
+      extendBody: true,
       body: child,
-      floatingActionButton: GestureDetector(
-        onTap: () => context.push('/voice'),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      floatingActionButton: Semantics(
+        button: true,
+        label: 'Talk to Nimmy',
         child: Container(
-          width: 60,
-          height: 60,
-          decoration: BoxDecoration(
+          width: 64,
+          height: 64,
+          decoration: const BoxDecoration(
             shape: BoxShape.circle,
-            gradient: const LinearGradient(
-              colors: [NimmyColors.purpleDark, NimmyColors.purple],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
+            gradient: NimmyColors.primaryGradient,
             boxShadow: [
               BoxShadow(
                 color: NimmyColors.purpleGlow,
-                blurRadius: 20,
+                blurRadius: 30,
                 spreadRadius: 2,
               ),
             ],
           ),
-          child: const Icon(
-            Icons.mic_rounded,
-            color: Colors.white,
-            size: 28,
+          child: IconButton(
+            onPressed: () => context.push('/voice'),
+            icon: const Icon(Icons.mic_rounded, color: Colors.white, size: 28),
           ),
         ),
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
-          color: NimmyColors.surface,
-          border: Border(
-            top: BorderSide(color: NimmyColors.border, width: 0.5),
-          ),
-        ),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _NavItem(
-                  icon: Icons.dashboard_rounded,
-                  label: 'Home',
-                  isSelected: selectedIndex == 0,
-                  onTap: () => _onTap(context, 0),
-                ),
-                _NavItem(
-                  icon: Icons.check_circle_outline_rounded,
-                  label: 'Tasks',
-                  isSelected: selectedIndex == 1,
-                  onTap: () => _onTap(context, 1),
-                ),
-                const SizedBox(width: 60), // Space for FAB
-                _NavItem(
-                  icon: Icons.sticky_note_2_rounded,
-                  label: 'Notes',
-                  isSelected: selectedIndex == 3,
-                  onTap: () => _onTap(context, 3),
-                ),
-                _NavItem(
-                  icon: Icons.psychology_rounded,
-                  label: 'Memory',
-                  isSelected: selectedIndex == 4,
-                  onTap: () => _onTap(context, 4),
-                ),
-              ],
-            ),
-          ),
-        ),
+      bottomNavigationBar: _NimmyBottomBar(
+        selectedIndex: selected,
+        onSelect: (index) => context.go(_destinations[index].$1),
       ),
     );
   }
 }
 
-class _NavItem extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _NavItem({
-    required this.icon,
-    required this.label,
-    required this.isSelected,
-    required this.onTap,
+class _NimmyBottomBar extends StatelessWidget {
+  const _NimmyBottomBar({
+    required this.selectedIndex,
+    required this.onSelect,
   });
+
+  final int selectedIndex;
+  final ValueChanged<int> onSelect;
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              color: isSelected ? NimmyColors.purple : NimmyColors.textMuted,
-              size: 24,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                color: isSelected ? NimmyColors.purple : NimmyColors.textMuted,
-              ),
-            ),
-          ],
+    return Container(
+      decoration: const BoxDecoration(
+        color: Color(0xF50C0C14),
+        border: Border(top: BorderSide(color: NimmyColors.border)),
+      ),
+      child: SafeArea(
+        top: false,
+        child: SizedBox(
+          height: 72,
+          child: Row(
+            children: List.generate(AppShell._destinations.length + 1, (slot) {
+              if (slot == 2) return const SizedBox(width: 70);
+              final index = slot < 2 ? slot : slot - 1;
+              final item = AppShell._destinations[index];
+              final active = selectedIndex == index;
+              return Expanded(
+                child: InkResponse(
+                  onTap: () => onSelect(index),
+                  radius: 28,
+                  child: Semantics(
+                    selected: active,
+                    label: item.$4,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        AnimatedSwitcher(
+                          duration: NimmyDurations.fast,
+                          child: Icon(
+                            active ? item.$2 : item.$3,
+                            key: ValueKey(active),
+                            color: active
+                                ? NimmyColors.purpleLight
+                                : NimmyColors.textMuted,
+                            size: 22,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          item.$4,
+                          maxLines: 1,
+                          style: TextStyle(
+                            fontSize: 9.5,
+                            fontWeight:
+                                active ? FontWeight.w700 : FontWeight.w500,
+                            color: active
+                                ? NimmyColors.purpleLight
+                                : NimmyColors.textMuted,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }),
+          ),
         ),
       ),
     );

@@ -1,15 +1,18 @@
-// 🟣 NIMMY — App Router
-// =====================
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../features/shell/app_shell.dart';
-import '../../features/dashboard/dashboard_screen.dart';
-import '../../features/tasks/tasks_screen.dart';
+
+import '../../features/audit/audit_screen.dart';
 import '../../features/calendar/calendar_screen.dart';
-import '../../features/notes/notes_screen.dart';
+import '../../features/dashboard/dashboard_screen.dart';
 import '../../features/memory/memory_screen.dart';
-import '../../features/voice/voice_screen.dart';
+import '../../features/more/more_screen.dart';
+import '../../features/notes/notes_screen.dart';
+import '../../features/permissions/permission_center_screen.dart';
+import '../../features/reminders/reminders_screen.dart';
 import '../../features/settings/settings_screen.dart';
+import '../../features/shell/app_shell.dart';
+import '../../features/tasks/tasks_screen.dart';
+import '../../features/voice/voice_screen.dart';
 
 class NimmyRouter {
   static final _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -17,69 +20,60 @@ class NimmyRouter {
 
   static final router = GoRouter(
     navigatorKey: _rootNavigatorKey,
-    initialLocation: '/dashboard',
+    initialLocation: '/home',
     routes: [
       ShellRoute(
         navigatorKey: _shellNavigatorKey,
         builder: (context, state, child) => AppShell(child: child),
         routes: [
-          GoRoute(
-            path: '/dashboard',
-            pageBuilder: (context, state) => const NoTransitionPage(
-              child: DashboardScreen(),
-            ),
-          ),
-          GoRoute(
-            path: '/tasks',
-            pageBuilder: (context, state) => const NoTransitionPage(
-              child: TasksScreen(),
-            ),
-          ),
-          GoRoute(
-            path: '/calendar',
-            pageBuilder: (context, state) => const NoTransitionPage(
-              child: CalendarScreen(),
-            ),
-          ),
-          GoRoute(
-            path: '/notes',
-            pageBuilder: (context, state) => const NoTransitionPage(
-              child: NotesScreen(),
-            ),
-          ),
-          GoRoute(
-            path: '/memory',
-            pageBuilder: (context, state) => const NoTransitionPage(
-              child: MemoryScreen(),
-            ),
-          ),
-          GoRoute(
-            path: '/settings',
-            pageBuilder: (context, state) => const NoTransitionPage(
-              child: SettingsScreen(),
-            ),
-          ),
+          _shellRoute('/home', const DashboardScreen()),
+          _shellRoute('/tasks', const TasksScreen()),
+          _shellRoute('/calendar', const CalendarScreen()),
+          _shellRoute('/memory', const MemoryScreen()),
+          _shellRoute('/more', const MoreScreen()),
         ],
       ),
-      GoRoute(
-        path: '/voice',
-        parentNavigatorKey: _rootNavigatorKey,
-        pageBuilder: (context, state) => CustomTransitionPage(
-          child: const VoiceScreen(),
-          transitionsBuilder: (context, animation, secondaryAnimation, child) {
-            return SlideTransition(
-              position: Tween<Offset>(
-                begin: const Offset(0, 1),
-                end: Offset.zero,
-              ).animate(CurvedAnimation(
-                parent: animation,
-                curve: Curves.easeOutCubic,
-              )),
-              child: child,
-            );
-          },
-        ),
-      ),
+      _modalRoute('/voice', const VoiceScreen()),
+      _modalRoute('/reminders', const RemindersScreen()),
+      _modalRoute('/audit', const AuditScreen()),
+      _modalRoute('/permissions', const PermissionCenterScreen()),
+      _modalRoute('/notes', const NotesScreen()),
+      _modalRoute('/settings', const SettingsScreen()),
     ],
   );
+
+  static GoRoute _shellRoute(String path, Widget child) {
+    return GoRoute(
+      path: path,
+      pageBuilder: (context, state) => NoTransitionPage(child: child),
+    );
+  }
+
+  static GoRoute _modalRoute(String path, Widget child) {
+    return GoRoute(
+      path: path,
+      parentNavigatorKey: _rootNavigatorKey,
+      pageBuilder: (context, state) => CustomTransitionPage(
+        child: child,
+        transitionDuration: const Duration(milliseconds: 280),
+        reverseTransitionDuration: const Duration(milliseconds: 220),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          final curved = CurvedAnimation(
+            parent: animation,
+            curve: Curves.easeOutCubic,
+          );
+          return FadeTransition(
+            opacity: curved,
+            child: SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(0, 0.035),
+                end: Offset.zero,
+              ).animate(curved),
+              child: child,
+            ),
+          );
+        },
+      ),
+    );
+  }
 }
