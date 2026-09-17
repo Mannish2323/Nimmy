@@ -1,0 +1,50 @@
+version: '3.9'
+
+# =============================================
+# 🟣 NIMMY — Local Development Docker Compose
+# =============================================
+
+services:
+  # 🧠 Python AI Brain
+  ai-brain:
+    build: ./services/ai-brain
+    container_name: nimmy-ai-brain
+    ports:
+      - "8001:8000"
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_KEY=${SUPABASE_KEY}
+    volumes:
+      - ./services/ai-brain:/app
+    restart: unless-stopped
+
+  # 🔵 Go API Gateway
+  gateway:
+    build: ./services/gateway
+    container_name: nimmy-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+      - AI_BRAIN_URL=http://ai-brain:8000
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_KEY=${SUPABASE_KEY}
+    depends_on:
+      - ai-brain
+    restart: unless-stopped
+
+  # 🌐 Next.js Web (dev mode)
+  web:
+    build: ./apps/web
+    container_name: nimmy-web
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_GATEWAY_URL=http://localhost:8080
+      - NEXT_PUBLIC_SUPABASE_URL=${SUPABASE_URL}
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${SUPABASE_KEY}
+    volumes:
+      - ./apps/web:/app
+      - /app/node_modules
+    restart: unless-stopped

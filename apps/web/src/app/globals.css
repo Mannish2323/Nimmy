@@ -1,0 +1,158 @@
+@import "tailwindcss";
+
+:root {
+  --background: #070510;
+  --foreground: #f8fafc;
+  --card: #0e0921;
+  --card-elevated: #150f32;
+  --card-border: rgba(139, 92, 246, 0.18);
+  --card-border-hover: rgba(168, 85, 247, 0.45);
+  
+  --nimmy-purple: #8b5cf6;
+  --nimmy-violet: #7c3aed;
+  --nimmy-fuchsia: #c084fc;
+  --nimmy-cyan: #06b6d4;
+  --nimmy-emerald: #10b981;
+  --nimmy-amber: #f59e0b;
+  --nimmy-pink: #ec4899;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-elevated: var(--card-elevated);
+  --color-card-border: var(--card-border);
+  --color-nimmy-purple: var(--nimmy-purple);
+  --color-nimmy-violet: var(--nimmy-violet);
+  --color-nimmy-fuchsia: var(--nimmy-fuchsia);
+  --color-nimmy-cyan: var(--nimmy-cyan);
+  --color-nimmy-emerald: var(--nimmy-emerald);
+  --color-nimmy-amber: var(--nimmy-amber);
+  --color-nimmy-pink: var(--nimmy-pink);
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  overflow-x: hidden;
+  selection-background-color: #8b5cf6;
+  selection-color: #ffffff;
+}
+
+/* Custom Cyber Grid Background */
+.cyber-grid {
+  background-size: 40px 40px;
+  background-image: 
+    linear-gradient(to right, rgba(139, 92, 246, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(139, 92, 246, 0.05) 1px, transparent 1px);
+}
+
+/* Glassmorphism Styles */
+.glass-panel {
+  background: rgba(14, 9, 33, 0.72);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(139, 92, 246, 0.18);
+}
+
+.glass-panel-elevated {
+  background: rgba(21, 15, 50, 0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(168, 85, 247, 0.28);
+}
+
+.glass-card {
+  background: rgba(14, 9, 33, 0.65);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(139, 92, 246, 0.14);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-card:hover {
+  background: rgba(22, 15, 52, 0.85);
+  border-color: rgba(168, 85, 247, 0.42);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px -8px rgba(124, 58, 237, 0.25);
+}
+
+/* Glowing text and effects */
+.glow-purple {
+  box-shadow: 0 0 40px rgba(139, 92, 246, 0.35);
+}
+
+.glow-cyan {
+  box-shadow: 0 0 40px rgba(6, 182, 212, 0.35);
+}
+
+.text-gradient {
+  background: linear-gradient(135deg, #ffffff 0%, #d8b4fe 50%, #c084fc 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.text-gradient-purple {
+  background: linear-gradient(135deg, #c084fc 0%, #a855f7 40%, #6366f1 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.text-gradient-cyan {
+  background: linear-gradient(135deg, #67e8f9 0%, #06b6d4 50%, #3b82f6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Animations */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+.animate-float {
+  animation: float 4s ease-in-out infinite;
+}
+
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.95);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(0.95);
+    opacity: 0.6;
+  }
+}
+
+.animate-pulse-ring {
+  animation: pulse-ring 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #070510;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #251b47;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #3f2e73;
+}

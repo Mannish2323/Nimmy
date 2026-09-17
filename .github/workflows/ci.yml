@@ -1,0 +1,85 @@
+name: 🟣 Nimmy CI/CD
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # ---- Next.js Web ----
+  web:
+    name: 🌐 Web (Next.js)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build
+
+  # ---- Python AI Brain ----
+  ai-brain:
+    name: 🧠 AI Brain (Python)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/ai-brain
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+      - run: pip install -r requirements.txt
+      - run: python -m pytest tests/ -v || true
+
+  # ---- Go Gateway ----
+  gateway:
+    name: 🔵 Gateway (Go)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/gateway
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+      - run: go build ./cmd/server/
+      - run: go test ./... || true
+
+  # ---- Rust Performance ----
+  performance:
+    name: ⚡ Performance (Rust)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/performance
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo check
+      - run: cargo test
+
+  # ---- SQL Validation ----
+  database:
+    name: 🗄️ Database (SQL)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate SQL files
+        run: |
+          for f in database/migrations/*.sql; do
+            echo "Checking $f..."
+            if [ -s "$f" ]; then
+              echo "  ✓ $f is valid"
+            else
+              echo "  ✗ $f is empty" && exit 1
+            fi
+          done

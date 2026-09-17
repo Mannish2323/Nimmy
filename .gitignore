@@ -1,0 +1,101 @@
+# ===========================
+# 🟣 NIMMY — Monorepo .gitignore
+# ===========================
+
+# ---- OS ----
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# ---- IDEs ----
+.idea/
+.vscode/
+*.iml
+*.code-workspace
+
+# ---- Environment ----
+.env
+.env.local
+.env.*.local
+*.env
+
+# ---- Flutter / Dart ----
+flutter/
+apps/mobile/.dart_tool/
+apps/mobile/.packages
+apps/mobile/build/
+apps/mobile/.flutter-plugins
+apps/mobile/.flutter-plugins-dependencies
+apps/mobile/pubspec.lock
+*.dart.js
+*.dart.js.map
+*.dart.precompiled.js
+
+# ---- Kotlin / Android ----
+apps/mobile/android/.gradle/
+apps/mobile/android/build/
+apps/mobile/android/app/build/
+apps/mobile/android/local.properties
+*.apk
+*.aab
+
+# ---- iOS ----
+apps/mobile/ios/Pods/
+apps/mobile/ios/.symlinks/
+apps/mobile/ios/Flutter/Flutter.framework
+apps/mobile/ios/Flutter/Flutter.podspec
+
+# ---- Next.js / TypeScript / Node ----
+node_modules/
+.next/
+out/
+.turbo/
+dist/
+*.tsbuildinfo
+.vercel/
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+venv/
+.venv/
+env/
+*.whl
+
+# ---- Go ----
+services/gateway/bin/
+services/gateway/vendor/
+
+# ---- Rust ----
+services/performance/target/
+**/*.rs.bk
+Cargo.lock
+
+# ---- C++ ----
+*.o
+*.so
+*.dylib
+*.dll
+*.exe
+cmake-build-*/
+
+# ---- Database ----
+*.sqlite
+*.db
+
+# ---- Docker ----
+docker-compose.override.yml
+
+# ---- Logs & Coverage ----
+logs/
+*.log
+npm-debug.log*
+coverage/
+.nyc_output/
+htmlcov/
+.coverage

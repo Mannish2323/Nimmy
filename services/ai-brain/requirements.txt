@@ -1,0 +1,24 @@
+# 🧠 Nimmy AI Brain — Python + FastAPI
+# =====================================
+# This service handles all AI/ML processing for Nimmy.
+# - Chat / conversation
+# - Transcription pipeline
+# - Summarization
+# - Memory extraction
+# - NLP (intent detection, entity extraction)
+# - Embeddings / RAG
+# - AI agents
+# - Recommendations
+
+fastapi==0.115.0
+uvicorn[standard]==0.34.0
+pydantic==2.10.0
+python-dotenv==1.1.0
+httpx==0.28.0
+google-genai==1.14.0
+numpy==2.2.0
+scikit-learn==1.6.0
+sentence-transformers==4.1.0
+python-multipart==0.0.20
+supabase==2.15.0
+python-jose[cryptography]==3.4.0
