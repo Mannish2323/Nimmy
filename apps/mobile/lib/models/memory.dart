@@ -66,17 +66,17 @@ class NimmyMemory {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'user_id': userId,
-        'request_id': requestId,
-        'content': content,
-        'category': category.name,
-        'importance': importance.name,
-        'source': source.name,
-        'source_reference': sourceReference,
-        'created_at': createdAt.toUtc().toIso8601String(),
-        'updated_at': updatedAt.toUtc().toIso8601String(),
-      };
+    'id': id,
+    'user_id': userId,
+    'request_id': requestId,
+    'content': content,
+    'category': category.name,
+    'importance': importance.name,
+    'source': source.name,
+    'source_reference': sourceReference,
+    'created_at': createdAt.toUtc().toIso8601String(),
+    'updated_at': updatedAt.toUtc().toIso8601String(),
+  };
 
   factory NimmyMemory.fromJson(Map<String, dynamic> json) {
     return NimmyMemory(
@@ -85,8 +85,7 @@ class NimmyMemory {
       requestId: json['request_id'] as String,
       content: json['content'] as String,
       category: MemoryCategory.values.byName(json['category'] as String),
-      importance:
-          MemoryImportance.values.byName(json['importance'] as String),
+      importance: MemoryImportance.values.byName(json['importance'] as String),
       source: InteractionSource.values.byName(json['source'] as String),
       sourceReference: json['source_reference'] as String?,
       createdAt: DateTime.parse(json['created_at'] as String),

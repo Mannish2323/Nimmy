@@ -33,7 +33,8 @@ class _MemoryScreenState extends State<MemoryScreen> {
     final query = _searchController.text.trim().toLowerCase();
     final memories = controller.memories.where((memory) {
       final matchesCategory = _category == null || memory.category == _category;
-      final matchesQuery = query.isEmpty ||
+      final matchesQuery =
+          query.isEmpty ||
           memory.content.toLowerCase().contains(query) ||
           memory.category.name.contains(query);
       return matchesCategory && matchesQuery;
@@ -58,7 +59,10 @@ class _MemoryScreenState extends State<MemoryScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Memory', style: Theme.of(context).textTheme.headlineLarge),
+                      Text(
+                        'Memory',
+                        style: Theme.of(context).textTheme.headlineLarge,
+                      ),
                       const SizedBox(height: 4),
                       Text(
                         'What Nimmy remembers—only with your approval.',
@@ -142,8 +146,9 @@ class _MemoryScreenState extends State<MemoryScreen> {
                     message: controller.memories.isEmpty
                         ? 'Say “Nimmy, remember this…” to save something explicitly.'
                         : 'Try a different search or category.',
-                    actionLabel:
-                        controller.memories.isEmpty ? 'Talk to Nimmy' : null,
+                    actionLabel: controller.memories.isEmpty
+                        ? 'Talk to Nimmy'
+                        : null,
                     onAction: controller.memories.isEmpty
                         ? () => context.push('/voice')
                         : null,
@@ -263,7 +268,10 @@ class _MemoryCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              StatusBadge(label: memory.categoryLabel.toUpperCase(), color: color),
+              StatusBadge(
+                label: memory.categoryLabel.toUpperCase(),
+                color: color,
+              ),
               const Spacer(),
               PopupMenuButton<String>(
                 tooltip: 'Memory actions',

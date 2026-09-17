@@ -26,12 +26,12 @@ class CreateReminderInput extends ToolInput {
 
   @override
   Map<String, dynamic> toJson() => {
-        'title': title,
-        'scheduled_at': scheduledAt.toUtc().toIso8601String(),
-        'timezone': timezone,
-        'recurrence': recurrence,
-        'notes': notes,
-      };
+    'title': title,
+    'scheduled_at': scheduledAt.toUtc().toIso8601String(),
+    'timezone': timezone,
+    'recurrence': recurrence,
+    'notes': notes,
+  };
 }
 
 class SaveMemoryInput extends ToolInput {
@@ -49,11 +49,11 @@ class SaveMemoryInput extends ToolInput {
 
   @override
   Map<String, dynamic> toJson() => {
-        'content': content,
-        'category': category.name,
-        'importance': importance.name,
-        'source_reference': sourceReference,
-      };
+    'content': content,
+    'category': category.name,
+    'importance': importance.name,
+    'source_reference': sourceReference,
+  };
 }
 
 class ToolProposal {
@@ -78,10 +78,10 @@ class IntentParseResult {
   const IntentParseResult._({this.proposal, this.clarification, this.error});
 
   const IntentParseResult.proposal(ToolProposal proposal)
-      : this._(proposal: proposal);
+    : this._(proposal: proposal);
 
   const IntentParseResult.clarification(String message)
-      : this._(clarification: message);
+    : this._(clarification: message);
 
   const IntentParseResult.error(String message) : this._(error: message);
 

@@ -62,20 +62,20 @@ class NimmyReminder {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'user_id': userId,
-        'request_id': requestId,
-        'title': title,
-        'scheduled_at': scheduledAt.toUtc().toIso8601String(),
-        'timezone': timezone,
-        'recurrence': recurrence,
-        'notes': notes,
-        'source': source.name,
-        'status': status.name,
-        'created_at': createdAt.toUtc().toIso8601String(),
-        'updated_at': updatedAt.toUtc().toIso8601String(),
-        'notification_scheduled': notificationScheduled,
-      };
+    'id': id,
+    'user_id': userId,
+    'request_id': requestId,
+    'title': title,
+    'scheduled_at': scheduledAt.toUtc().toIso8601String(),
+    'timezone': timezone,
+    'recurrence': recurrence,
+    'notes': notes,
+    'source': source.name,
+    'status': status.name,
+    'created_at': createdAt.toUtc().toIso8601String(),
+    'updated_at': updatedAt.toUtc().toIso8601String(),
+    'notification_scheduled': notificationScheduled,
+  };
 
   factory NimmyReminder.fromJson(Map<String, dynamic> json) {
     return NimmyReminder(
@@ -91,8 +91,7 @@ class NimmyReminder {
       status: ReminderStatus.values.byName(json['status'] as String),
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
-      notificationScheduled:
-          json['notification_scheduled'] as bool? ?? false,
+      notificationScheduled: json['notification_scheduled'] as bool? ?? false,
     );
   }
 }

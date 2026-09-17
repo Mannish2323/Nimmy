@@ -106,7 +106,10 @@ class _AuditCard extends StatelessWidget {
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                     ),
-                    StatusBadge(label: event.status.name.toUpperCase(), color: color),
+                    StatusBadge(
+                      label: event.status.name.toUpperCase(),
+                      color: color,
+                    ),
                   ],
                 ),
                 const SizedBox(height: 6),
@@ -123,9 +126,9 @@ class _AuditCard extends StatelessWidget {
                   const SizedBox(height: 5),
                   Text(
                     event.errorCode!,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: NimmyColors.red,
-                        ),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodySmall?.copyWith(color: NimmyColors.red),
                   ),
                 ],
               ],

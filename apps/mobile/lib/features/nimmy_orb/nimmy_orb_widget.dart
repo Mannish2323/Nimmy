@@ -98,25 +98,24 @@ class _NimmyOrbPainter extends CustomPainter {
   final double audioLevel;
 
   Color get color => switch (state) {
-        NimmyOrbState.listening => NimmyColors.cyan,
-        NimmyOrbState.understanding || NimmyOrbState.thinking =>
-          NimmyColors.indigo,
-        NimmyOrbState.confirming => NimmyColors.amber,
-        NimmyOrbState.executing => NimmyColors.purpleLight,
-        NimmyOrbState.success => NimmyColors.green,
-        NimmyOrbState.speaking => NimmyColors.purpleLight,
-        NimmyOrbState.error => NimmyColors.pink,
-        NimmyOrbState.recording => NimmyColors.red,
-        NimmyOrbState.idle => NimmyColors.purple,
-      };
+    NimmyOrbState.listening => NimmyColors.cyan,
+    NimmyOrbState.understanding || NimmyOrbState.thinking => NimmyColors.indigo,
+    NimmyOrbState.confirming => NimmyColors.amber,
+    NimmyOrbState.executing => NimmyColors.purpleLight,
+    NimmyOrbState.success => NimmyColors.green,
+    NimmyOrbState.speaking => NimmyColors.purpleLight,
+    NimmyOrbState.error => NimmyColors.pink,
+    NimmyOrbState.recording => NimmyColors.red,
+    NimmyOrbState.idle => NimmyColors.purple,
+  };
 
   double get speed => switch (state) {
-        NimmyOrbState.thinking || NimmyOrbState.executing => 3.1,
-        NimmyOrbState.understanding => 2.1,
-        NimmyOrbState.listening || NimmyOrbState.speaking => 1.65,
-        NimmyOrbState.error => 2.4,
-        _ => 1,
-      };
+    NimmyOrbState.thinking || NimmyOrbState.executing => 3.1,
+    NimmyOrbState.understanding => 2.1,
+    NimmyOrbState.listening || NimmyOrbState.speaking => 1.65,
+    NimmyOrbState.error => 2.4,
+    _ => 1,
+  };
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -160,13 +159,7 @@ class _NimmyOrbPainter extends CustomPainter {
       canvas.translate(center.dx, center.dy);
       canvas.rotate((phase * math.pi * 2 * speed) + i * 0.8);
       canvas.translate(-center.dx, -center.dy);
-      canvas.drawArc(
-        rect,
-        i * 1.7,
-        math.pi * (0.9 + i * 0.18),
-        false,
-        paint,
-      );
+      canvas.drawArc(rect, i * 1.7, math.pi * (0.9 + i * 0.18), false, paint);
       canvas.restore();
     }
   }
@@ -248,8 +241,8 @@ class _NimmyOrbPainter extends CustomPainter {
         ..strokeWidth = 1.6;
       for (var i = 0; i < 28; i++) {
         final angle = (i / 28) * math.pi * 2;
-        final wave = 0.5 +
-            0.5 * math.sin(angle * 4 + phase * math.pi * 8 * speed);
+        final wave =
+            0.5 + 0.5 * math.sin(angle * 4 + phase * math.pi * 8 * speed);
         final start = radius * 1.63;
         final end = start + radius * (0.08 + level * wave * 0.2);
         canvas.drawLine(

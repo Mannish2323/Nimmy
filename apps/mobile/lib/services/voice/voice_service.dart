@@ -6,8 +6,8 @@ typedef TranscriptCallback = void Function(String text, bool isFinal);
 
 class VoiceService {
   VoiceService({SpeechToText? speech, FlutterTts? tts})
-      : _speech = speech ?? SpeechToText(),
-        _tts = tts ?? FlutterTts();
+    : _speech = speech ?? SpeechToText(),
+      _tts = tts ?? FlutterTts();
 
   final SpeechToText _speech;
   final FlutterTts _tts;

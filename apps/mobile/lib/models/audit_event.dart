@@ -30,18 +30,18 @@ class AuditEvent {
   final String? errorCode;
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'user_id': userId,
-        'action_type': actionType,
-        'tool_name': toolName,
-        'request_id': requestId,
-        'source': source.name,
-        'status': status.name,
-        'created_at': createdAt.toUtc().toIso8601String(),
-        'executed_at': executedAt?.toUtc().toIso8601String(),
-        'metadata': metadata,
-        'error_code': errorCode,
-      };
+    'id': id,
+    'user_id': userId,
+    'action_type': actionType,
+    'tool_name': toolName,
+    'request_id': requestId,
+    'source': source.name,
+    'status': status.name,
+    'created_at': createdAt.toUtc().toIso8601String(),
+    'executed_at': executedAt?.toUtc().toIso8601String(),
+    'metadata': metadata,
+    'error_code': errorCode,
+  };
 
   factory AuditEvent.fromJson(Map<String, dynamic> json) {
     return AuditEvent(

@@ -8,7 +8,9 @@ class NimmyNativeBridge {
   /// Start native Android foreground daemon service
   static Future<bool> startBackgroundService() async {
     try {
-      final result = await _channel.invokeMethod<bool>('startBackgroundService');
+      final result = await _channel.invokeMethod<bool>(
+        'startBackgroundService',
+      );
       return result ?? false;
     } on PlatformException {
       return false;
@@ -44,7 +46,9 @@ class NimmyNativeBridge {
   /// Start hardware microphone capture via AudioRecord daemon
   static Future<Map<String, dynamic>> startVoiceRecording() async {
     try {
-      final result = await _channel.invokeMapMethod<String, dynamic>('startVoiceRecording');
+      final result = await _channel.invokeMapMethod<String, dynamic>(
+        'startVoiceRecording',
+      );
       return result ?? {'status': 'error', 'filePath': null};
     } on PlatformException catch (e) {
       return {'status': 'error', 'message': e.message};
@@ -56,8 +60,11 @@ class NimmyNativeBridge {
   /// Stop hardware microphone capture and retrieve recorded PCM file metadata
   static Future<Map<String, dynamic>> stopVoiceRecording() async {
     try {
-      final result = await _channel.invokeMapMethod<String, dynamic>('stopVoiceRecording');
-      return result ?? {'status': 'stopped', 'filePath': null, 'fileSizeBytes': 0};
+      final result = await _channel.invokeMapMethod<String, dynamic>(
+        'stopVoiceRecording',
+      );
+      return result ??
+          {'status': 'stopped', 'filePath': null, 'fileSizeBytes': 0};
     } on PlatformException catch (e) {
       return {'status': 'error', 'message': e.message};
     } catch (e) {
@@ -73,12 +80,13 @@ class NimmyNativeBridge {
     int? id,
   }) async {
     try {
-      final result = await _channel.invokeMapMethod<String, dynamic>('scheduleAlarm', {
-        'title': title,
-        'body': body,
-        'triggerAtMillis': scheduledTime.millisecondsSinceEpoch,
-        'id': id ?? scheduledTime.millisecondsSinceEpoch ~/ 1000,
-      });
+      final result = await _channel
+          .invokeMapMethod<String, dynamic>('scheduleAlarm', {
+            'title': title,
+            'body': body,
+            'triggerAtMillis': scheduledTime.millisecondsSinceEpoch,
+            'id': id ?? scheduledTime.millisecondsSinceEpoch ~/ 1000,
+          });
       return result ?? {'scheduled': false};
     } on PlatformException catch (e) {
       return {'scheduled': false, 'error': e.message};
@@ -90,13 +98,16 @@ class NimmyNativeBridge {
   /// Retrieve device hardware telemetry
   static Future<Map<String, dynamic>> getDeviceInfo() async {
     try {
-      final result = await _channel.invokeMapMethod<String, dynamic>('getDeviceInfo');
-      return result ?? {
-        'manufacturer': 'LocalHost',
-        'model': 'Simulation',
-        'batteryLevel': 100,
-        'isBackgroundServiceRunning': false,
-      };
+      final result = await _channel.invokeMapMethod<String, dynamic>(
+        'getDeviceInfo',
+      );
+      return result ??
+          {
+            'manufacturer': 'LocalHost',
+            'model': 'Simulation',
+            'batteryLevel': 100,
+            'isBackgroundServiceRunning': false,
+          };
     } on PlatformException {
       return {
         'manufacturer': 'LocalHost',
@@ -131,7 +142,9 @@ class NimmyNativeBridge {
   /// Check runtime audio and notification permissions
   static Future<Map<String, bool>> checkPermissions() async {
     try {
-      final result = await _channel.invokeMapMethod<String, bool>('checkPermissions');
+      final result = await _channel.invokeMapMethod<String, bool>(
+        'checkPermissions',
+      );
       return result ?? {'recordAudio': false, 'notifications': false};
     } on PlatformException {
       return {'recordAudio': false, 'notifications': false};

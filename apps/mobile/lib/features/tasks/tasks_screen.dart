@@ -24,7 +24,10 @@ class TasksScreen extends StatelessWidget {
             child: Row(
               children: [
                 Expanded(
-                  child: Text('Tasks', style: Theme.of(context).textTheme.headlineLarge),
+                  child: Text(
+                    'Tasks',
+                    style: Theme.of(context).textTheme.headlineLarge,
+                  ),
                 ),
                 const StatusBadge(label: 'COMING SOON'),
               ],

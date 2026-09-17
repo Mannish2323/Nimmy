@@ -56,8 +56,9 @@ class _VoiceScreenState extends State<VoiceScreen> {
     }
 
     final permissionService = context.read<PermissionService>();
-    final permission =
-        await permissionService.request(NimmyPermission.microphone);
+    final permission = await permissionService.request(
+      NimmyPermission.microphone,
+    );
     if (!mounted) return;
     if (permission != NimmyPermissionStatus.allowed) {
       controller.setOrbState(
@@ -157,13 +158,19 @@ class _VoiceScreenState extends State<VoiceScreen> {
                   IconButton(
                     tooltip: 'Close',
                     onPressed: () => context.pop(),
-                    icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 32),
+                    icon: const Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      size: 32,
+                    ),
                   ),
                   const Expanded(
                     child: Text(
                       'Nimmy',
                       textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+                      style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
                   IconButton(
@@ -188,9 +195,8 @@ class _VoiceScreenState extends State<VoiceScreen> {
                 padding: const EdgeInsets.all(NimmySpacing.lg),
                 child: ConstrainedBox(
                   constraints: BoxConstraints(
-                    minHeight: MediaQuery.sizeOf(context).height -
-                        310 -
-                        bottomInset,
+                    minHeight:
+                        MediaQuery.sizeOf(context).height - 310 - bottomInset,
                   ),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -207,8 +213,10 @@ class _VoiceScreenState extends State<VoiceScreen> {
                           controller.assistantMessage,
                           key: ValueKey(controller.assistantMessage),
                           textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                color: controller.orbState == NimmyOrbState.error
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(
+                                color:
+                                    controller.orbState == NimmyOrbState.error
                                     ? NimmyColors.red
                                     : NimmyColors.textPrimary,
                               ),
@@ -219,9 +227,8 @@ class _VoiceScreenState extends State<VoiceScreen> {
                         Text(
                           controller.warning!,
                           textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: NimmyColors.amber,
-                              ),
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(color: NimmyColors.amber),
                         ),
                       ],
                     ],
@@ -272,7 +279,9 @@ class _VoiceScreenState extends State<VoiceScreen> {
                       const SizedBox(width: NimmySpacing.lg),
                       Semantics(
                         button: true,
-                        label: _isListening ? 'Stop listening' : 'Start listening',
+                        label: _isListening
+                            ? 'Stop listening'
+                            : 'Start listening',
                         child: AnimatedContainer(
                           duration: NimmyDurations.fast,
                           width: _isListening ? 76 : 68,
@@ -293,9 +302,13 @@ class _VoiceScreenState extends State<VoiceScreen> {
                             ],
                           ),
                           child: IconButton(
-                            onPressed: controller.isBusy ? null : _toggleListening,
+                            onPressed: controller.isBusy
+                                ? null
+                                : _toggleListening,
                             icon: Icon(
-                              _isListening ? Icons.stop_rounded : Icons.mic_rounded,
+                              _isListening
+                                  ? Icons.stop_rounded
+                                  : Icons.mic_rounded,
                               color: Colors.white,
                               size: 30,
                             ),

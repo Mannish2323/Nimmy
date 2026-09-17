@@ -39,7 +39,10 @@ class DashboardScreen extends StatelessWidget {
             const SizedBox(height: NimmySpacing.xl),
             _QuickActions(isLocalOnly: controller.isLocalOnly),
             const SizedBox(height: NimmySpacing.xl),
-            Text('Today at a glance', style: Theme.of(context).textTheme.titleLarge),
+            Text(
+              'Today at a glance',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
             const SizedBox(height: NimmySpacing.sm),
             Row(
               children: [
@@ -77,7 +80,10 @@ class DashboardScreen extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Recent activity', style: Theme.of(context).textTheme.titleLarge),
+                Text(
+                  'Recent activity',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
                 TextButton(
                   onPressed: () => context.push('/audit'),
                   child: const Text('View all'),
@@ -177,7 +183,10 @@ class _OrbHero extends StatelessWidget {
             state: controller.orbState,
             onTap: () => context.push('/voice'),
           ),
-          Text('Hey, I’m Nimmy.', style: Theme.of(context).textTheme.headlineMedium),
+          Text(
+            'Hey, I’m Nimmy.',
+            style: Theme.of(context).textTheme.headlineMedium,
+          ),
           const SizedBox(height: NimmySpacing.xs),
           Text(
             'What should we remember or plan next?',
@@ -206,7 +215,12 @@ class _QuickActions extends StatelessWidget {
     final actions = [
       ('Reminder', Icons.alarm_add_rounded, '/voice', NimmyColors.amber),
       ('Memory', Icons.bookmark_add_outlined, '/voice', NimmyColors.cyan),
-      ('View all', Icons.notifications_none_rounded, '/reminders', NimmyColors.purple),
+      (
+        'View all',
+        Icons.notifications_none_rounded,
+        '/reminders',
+        NimmyColors.purple,
+      ),
       ('Activity', Icons.history_rounded, '/audit', NimmyColors.green),
     ];
     return Column(
@@ -301,7 +315,9 @@ class _NextUp extends StatelessWidget {
         Text('Next up', style: Theme.of(context).textTheme.titleLarge),
         const SizedBox(height: NimmySpacing.sm),
         GlassCard(
-          onTap: reminder == null ? () => context.push('/voice') : () => context.push('/reminders'),
+          onTap: reminder == null
+              ? () => context.push('/voice')
+              : () => context.push('/reminders'),
           child: Row(
             children: [
               Container(
@@ -311,7 +327,10 @@ class _NextUp extends StatelessWidget {
                   color: NimmyColors.amber.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(NimmyRadius.sm),
                 ),
-                child: const Icon(Icons.alarm_rounded, color: NimmyColors.amber),
+                child: const Icon(
+                  Icons.alarm_rounded,
+                  color: NimmyColors.amber,
+                ),
               ),
               const SizedBox(width: NimmySpacing.sm),
               Expanded(
@@ -326,14 +345,18 @@ class _NextUp extends StatelessWidget {
                     Text(
                       reminder == null
                           ? 'Ask Nimmy to create your first reminder.'
-                          : DateFormat('EEE, d MMM • h:mm a')
-                              .format(reminder!.scheduledAt.toLocal()),
+                          : DateFormat(
+                              'EEE, d MMM • h:mm a',
+                            ).format(reminder!.scheduledAt.toLocal()),
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ],
                 ),
               ),
-              const Icon(Icons.chevron_right_rounded, color: NimmyColors.textMuted),
+              const Icon(
+                Icons.chevron_right_rounded,
+                color: NimmyColors.textMuted,
+              ),
             ],
           ),
         ),

@@ -17,11 +17,11 @@ class ToolRegistry {
     ConfirmationPolicy confirmationPolicy = const ConfirmationPolicy(),
     Clock? clock,
     Uuid? uuid,
-  })  : _repository = repository,
-        _reminderScheduler = reminderScheduler,
-        _confirmationPolicy = confirmationPolicy,
-        _clock = clock ?? DateTime.now,
-        _uuid = uuid ?? const Uuid();
+  }) : _repository = repository,
+       _reminderScheduler = reminderScheduler,
+       _confirmationPolicy = confirmationPolicy,
+       _clock = clock ?? DateTime.now,
+       _uuid = uuid ?? const Uuid();
 
   final NimmyRepository _repository;
   final ReminderScheduler _reminderScheduler;
@@ -97,11 +97,14 @@ class ToolRegistry {
   ) async {
     if (input.title.trim().isEmpty ||
         !input.scheduledAt.isAfter(_clock().toUtc())) {
-      throw const FormatException('Reminder title and future time are required.');
+      throw const FormatException(
+        'Reminder title and future time are required.',
+      );
     }
 
-    final duplicate =
-        await _repository.findReminderByRequestId(proposal.requestId);
+    final duplicate = await _repository.findReminderByRequestId(
+      proposal.requestId,
+    );
     if (duplicate != null) {
       return ToolExecutionResult(
         success: true,
@@ -140,7 +143,8 @@ class ToolRegistry {
         warning = 'The reminder was saved, but its notification is not active.';
       }
     } catch (_) {
-      warning = 'The reminder was saved, but its notification could not be scheduled.';
+      warning =
+          'The reminder was saved, but its notification could not be scheduled.';
     }
 
     try {
@@ -174,7 +178,9 @@ class ToolRegistry {
       throw const FormatException('Memory content is required.');
     }
 
-    final duplicate = await _repository.findMemoryByRequestId(proposal.requestId);
+    final duplicate = await _repository.findMemoryByRequestId(
+      proposal.requestId,
+    );
     if (duplicate != null) {
       return ToolExecutionResult(
         success: true,

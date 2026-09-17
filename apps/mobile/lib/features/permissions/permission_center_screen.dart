@@ -10,8 +10,7 @@ class PermissionCenterScreen extends StatefulWidget {
   const PermissionCenterScreen({super.key});
 
   @override
-  State<PermissionCenterScreen> createState() =>
-      _PermissionCenterScreenState();
+  State<PermissionCenterScreen> createState() => _PermissionCenterScreenState();
 }
 
 class _PermissionCenterScreenState extends State<PermissionCenterScreen> {
@@ -90,7 +89,10 @@ class _PermissionCenterScreenState extends State<PermissionCenterScreen> {
                   onPressed: () => _request(NimmyPermission.notifications),
                 ),
                 const SizedBox(height: NimmySpacing.xl),
-                Text('Not requested in this build', style: Theme.of(context).textTheme.titleLarge),
+                Text(
+                  'Not requested in this build',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
                 const SizedBox(height: NimmySpacing.sm),
                 const _DeferredPermission(
                   icon: Icons.calendar_month_outlined,
@@ -110,7 +112,8 @@ class _PermissionCenterScreenState extends State<PermissionCenterScreen> {
                 const _DeferredPermission(
                   icon: Icons.fingerprint_rounded,
                   title: 'Biometric',
-                  reason: 'App lock architecture is planned for a later milestone.',
+                  reason:
+                      'App lock architecture is planned for a later milestone.',
                 ),
               ],
             ),
@@ -164,7 +167,12 @@ class _PermissionCard extends StatelessWidget {
                 child: Icon(icon, color: color),
               ),
               const SizedBox(width: NimmySpacing.sm),
-              Expanded(child: Text(title, style: Theme.of(context).textTheme.titleLarge)),
+              Expanded(
+                child: Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+              ),
               StatusBadge(label: status.name.toUpperCase(), color: color),
             ],
           ),
@@ -174,7 +182,8 @@ class _PermissionCard extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: OutlinedButton(
-              onPressed: status == NimmyPermissionStatus.allowed ||
+              onPressed:
+                  status == NimmyPermissionStatus.allowed ||
                       status == NimmyPermissionStatus.restricted
                   ? null
                   : onPressed,

@@ -11,8 +11,18 @@ class AppShell extends StatelessWidget {
   static const _destinations = [
     ('/home', Icons.home_rounded, Icons.home_outlined, 'Home'),
     ('/tasks', Icons.task_alt_rounded, Icons.task_alt_outlined, 'Tasks'),
-    ('/calendar', Icons.calendar_month_rounded, Icons.calendar_month_outlined, 'Calendar'),
-    ('/memory', Icons.auto_awesome_rounded, Icons.auto_awesome_outlined, 'Memory'),
+    (
+      '/calendar',
+      Icons.calendar_month_rounded,
+      Icons.calendar_month_outlined,
+      'Calendar',
+    ),
+    (
+      '/memory',
+      Icons.auto_awesome_rounded,
+      Icons.auto_awesome_outlined,
+      'Memory',
+    ),
     ('/more', Icons.grid_view_rounded, Icons.grid_view_outlined, 'More'),
   ];
 
@@ -61,10 +71,7 @@ class AppShell extends StatelessWidget {
 }
 
 class _NimmyBottomBar extends StatelessWidget {
-  const _NimmyBottomBar({
-    required this.selectedIndex,
-    required this.onSelect,
-  });
+  const _NimmyBottomBar({required this.selectedIndex, required this.onSelect});
 
   final int selectedIndex;
   final ValueChanged<int> onSelect;
@@ -113,8 +120,9 @@ class _NimmyBottomBar extends StatelessWidget {
                           maxLines: 1,
                           style: TextStyle(
                             fontSize: 9.5,
-                            fontWeight:
-                                active ? FontWeight.w700 : FontWeight.w500,
+                            fontWeight: active
+                                ? FontWeight.w700
+                                : FontWeight.w500,
                             color: active
                                 ? NimmyColors.purpleLight
                                 : NimmyColors.textMuted,

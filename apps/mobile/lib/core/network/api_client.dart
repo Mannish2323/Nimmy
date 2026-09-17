@@ -8,27 +8,29 @@ class NimmyApiClient {
   static const String defaultGatewayUrl = 'http://10.0.2.2:8080';
 
   NimmyApiClient({String baseUrl = defaultGatewayUrl})
-      : _dio = Dio(
-          BaseOptions(
-            baseUrl: baseUrl,
-            connectTimeout: const Duration(seconds: 5),
-            receiveTimeout: const Duration(seconds: 8),
-            headers: {
-              'Content-Type': 'application/json',
-              'X-Client-ID': 'nimmy-flutter-mobile',
-            },
-          ),
-        );
+    : _dio = Dio(
+        BaseOptions(
+          baseUrl: baseUrl,
+          connectTimeout: const Duration(seconds: 5),
+          receiveTimeout: const Duration(seconds: 8),
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Client-ID': 'nimmy-flutter-mobile',
+          },
+        ),
+      );
 
   /// Send message to Gateway -> Python AI Brain
-  Future<Map<String, dynamic>> sendChatMessage(String prompt,
-      {String sessionId = 'mobile-session'}) async {
+  Future<Map<String, dynamic>> sendChatMessage(
+    String prompt, {
+    String sessionId = 'mobile-session',
+  }) async {
     try {
       final response = await _dio.post(
         '/api/v1/chat',
         data: jsonEncode({
           'messages': [
-            {'role': 'user', 'content': prompt}
+            {'role': 'user', 'content': prompt},
           ],
           'session_id': sessionId,
         }),
@@ -51,8 +53,8 @@ class NimmyApiClient {
         'tool_calls': [
           {
             'name': 'create_task',
-            'arguments': {'title': prompt, 'priority': 'high'}
-          }
+            'arguments': {'title': prompt, 'priority': 'high'},
+          },
         ],
       };
     }
@@ -80,7 +82,7 @@ class NimmyApiClient {
         'category': 'Mobile Sync',
         'content': 'Android background service connected to Nimmy Gateway.',
         'confidence': 0.96,
-      }
+      },
     ];
   }
 
@@ -136,7 +138,9 @@ class NimmyApiClient {
   }
 
   /// Query multi-source retrospective timeline ("Nimmy, kal kya hua?")
-  Future<Map<String, dynamic>> fetchTimeline({String targetDate = 'today'}) async {
+  Future<Map<String, dynamic>> fetchTimeline({
+    String targetDate = 'today',
+  }) async {
     try {
       final response = await _dio.post(
         '/api/v1/intelligence/what-happened',
@@ -149,10 +153,10 @@ class NimmyApiClient {
 
     return {
       'date': targetDate,
-      'summary': 'Retrospective timeline synthesized across tasks and calendar.',
+      'summary':
+          'Retrospective timeline synthesized across tasks and calendar.',
       'events': [],
       'total_events': 0,
     };
   }
 }
-

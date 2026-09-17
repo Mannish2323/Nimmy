@@ -17,7 +17,7 @@ abstract interface class ReminderScheduler {
 
 class LocalNotificationService implements ReminderScheduler {
   LocalNotificationService({FlutterLocalNotificationsPlugin? plugin})
-      : _plugin = plugin ?? FlutterLocalNotificationsPlugin();
+    : _plugin = plugin ?? FlutterLocalNotificationsPlugin();
 
   final FlutterLocalNotificationsPlugin _plugin;
   String _timezone = 'UTC';

@@ -24,7 +24,10 @@ class CalendarScreen extends StatelessWidget {
             child: Row(
               children: [
                 Expanded(
-                  child: Text('Calendar', style: Theme.of(context).textTheme.headlineLarge),
+                  child: Text(
+                    'Calendar',
+                    style: Theme.of(context).textTheme.headlineLarge,
+                  ),
                 ),
                 const StatusBadge(label: 'COMING SOON'),
               ],

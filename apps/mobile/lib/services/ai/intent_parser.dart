@@ -7,12 +7,9 @@ import '../../models/tool_action.dart';
 typedef Clock = DateTime Function();
 
 class NimmyIntentParser {
-  NimmyIntentParser({
-    Clock? clock,
-    Uuid? uuid,
-    this.timezone = 'UTC',
-  })  : _clock = clock ?? DateTime.now,
-        _uuid = uuid ?? const Uuid();
+  NimmyIntentParser({Clock? clock, Uuid? uuid, this.timezone = 'UTC'})
+    : _clock = clock ?? DateTime.now,
+      _uuid = uuid ?? const Uuid();
 
   final Clock _clock;
   final Uuid _uuid;
@@ -129,8 +126,8 @@ class NimmyIntentParser {
       final duration = unit.startsWith('minute')
           ? Duration(minutes: amount)
           : unit.startsWith('hour')
-              ? Duration(hours: amount)
-              : Duration(days: amount);
+          ? Duration(hours: amount)
+          : Duration(days: amount);
       return _reminderProposal(
         title: relative.group(3)!,
         scheduledAt: _clock().add(duration),

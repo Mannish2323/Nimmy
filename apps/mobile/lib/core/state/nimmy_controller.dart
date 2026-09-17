@@ -18,11 +18,11 @@ class NimmyController extends ChangeNotifier {
     this.cloudConfigured = false,
     Clock? clock,
     Uuid? uuid,
-  })  : _repository = repository,
-        _intentParser = intentParser,
-        _toolRegistry = toolRegistry,
-        _clock = clock ?? DateTime.now,
-        _uuid = uuid ?? const Uuid();
+  }) : _repository = repository,
+       _intentParser = intentParser,
+       _toolRegistry = toolRegistry,
+       _clock = clock ?? DateTime.now,
+       _uuid = uuid ?? const Uuid();
 
   final NimmyRepository _repository;
   final NimmyIntentParser _intentParser;
@@ -36,7 +36,8 @@ class NimmyController extends ChangeNotifier {
   List<AuditEvent> _auditEvents = const [];
   NimmyOrbState _orbState = NimmyOrbState.idle;
   ToolProposal? _pendingProposal;
-  String _assistantMessage = 'Tell me what you want to remember or be reminded about.';
+  String _assistantMessage =
+      'Tell me what you want to remember or be reminded about.';
   String? _warning;
   bool _isBusy = false;
 
@@ -91,7 +92,8 @@ class NimmyController extends ChangeNotifier {
     final result = _intentParser.parse(text, source: source);
     if (!result.hasProposal) {
       _orbState = NimmyOrbState.error;
-      _assistantMessage = result.clarification ??
+      _assistantMessage =
+          result.clarification ??
           result.error ??
           'I could not understand that request.';
       notifyListeners();
@@ -133,9 +135,7 @@ class NimmyController extends ChangeNotifier {
       _pendingProposal = null;
       _assistantMessage = result.message;
       _warning = result.warning;
-      _orbState = result.success
-          ? NimmyOrbState.success
-          : NimmyOrbState.error;
+      _orbState = result.success ? NimmyOrbState.success : NimmyOrbState.error;
       await refresh();
       return result;
     } catch (_) {

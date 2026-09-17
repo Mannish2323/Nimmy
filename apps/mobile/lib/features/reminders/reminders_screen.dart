@@ -49,13 +49,23 @@ class _RemindersScreenState extends State<RemindersScreen> {
             ),
             child: SegmentedButton<_ReminderFilter>(
               segments: const [
-                ButtonSegment(value: _ReminderFilter.upcoming, label: Text('Upcoming')),
-                ButtonSegment(value: _ReminderFilter.recurring, label: Text('Recurring')),
-                ButtonSegment(value: _ReminderFilter.history, label: Text('History')),
+                ButtonSegment(
+                  value: _ReminderFilter.upcoming,
+                  label: Text('Upcoming'),
+                ),
+                ButtonSegment(
+                  value: _ReminderFilter.recurring,
+                  label: Text('Recurring'),
+                ),
+                ButtonSegment(
+                  value: _ReminderFilter.history,
+                  label: Text('History'),
+                ),
               ],
               selected: {_filter},
               showSelectedIcon: false,
-              onSelectionChanged: (value) => setState(() => _filter = value.first),
+              onSelectionChanged: (value) =>
+                  setState(() => _filter = value.first),
             ),
           ),
           if (controller.isLocalOnly)
@@ -175,7 +185,9 @@ class _ReminderCard extends StatelessWidget {
             decoration: BoxDecoration(
               color: NimmyColors.amber.withValues(alpha: 0.11),
               borderRadius: BorderRadius.circular(NimmyRadius.sm),
-              border: Border.all(color: NimmyColors.amber.withValues(alpha: 0.24)),
+              border: Border.all(
+                color: NimmyColors.amber.withValues(alpha: 0.24),
+              ),
             ),
             child: Column(
               children: [
@@ -199,7 +211,10 @@ class _ReminderCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(reminder.title, style: Theme.of(context).textTheme.titleMedium),
+                Text(
+                  reminder.title,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
                 const SizedBox(height: 5),
                 Text(
                   '${DateFormat('EEEE • h:mm a').format(local)} • ${reminder.timezone}',
@@ -244,7 +259,10 @@ class _ReminderCard extends StatelessWidget {
               }
             },
             itemBuilder: (context) => const [
-              PopupMenuItem(value: 'reschedule', child: Text('Reschedule (coming soon)')),
+              PopupMenuItem(
+                value: 'reschedule',
+                child: Text('Reschedule (coming soon)'),
+              ),
               PopupMenuItem(value: 'delete', child: Text('Delete')),
             ],
           ),

@@ -37,7 +37,10 @@ class SettingsScreen extends StatelessWidget {
                   child: const Center(
                     child: Text(
                       'N',
-                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
                   ),
                 ),
@@ -46,7 +49,10 @@ class SettingsScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Local profile', style: Theme.of(context).textTheme.titleLarge),
+                      Text(
+                        'Local profile',
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
                       const SizedBox(height: 3),
                       Text(
                         'Authentication setup is the next foundation step.',
@@ -98,7 +104,8 @@ class SettingsScreen extends StatelessWidget {
               _SettingsTile(
                 icon: Icons.history_rounded,
                 title: 'Action history',
-                subtitle: '${controller.auditEvents.length} structured audit events',
+                subtitle:
+                    '${controller.auditEvents.length} structured audit events',
                 onTap: () => context.push('/audit'),
               ),
               const _SettingsTile(
@@ -155,9 +162,9 @@ class _Section extends StatelessWidget {
             child: Text(
               title.toUpperCase(),
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    letterSpacing: 1.1,
-                    fontWeight: FontWeight.w700,
-                  ),
+                letterSpacing: 1.1,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
           GlassCard(
@@ -202,8 +209,8 @@ class _SettingsTile extends StatelessWidget {
       trailing: badge != null
           ? StatusBadge(label: badge!)
           : onTap != null
-              ? const Icon(Icons.chevron_right_rounded)
-              : null,
+          ? const Icon(Icons.chevron_right_rounded)
+          : null,
     );
   }
 }

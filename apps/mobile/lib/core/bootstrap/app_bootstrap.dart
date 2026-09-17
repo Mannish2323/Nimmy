@@ -33,7 +33,8 @@ class AppBootstrap {
     } catch (_) {
       repository = InMemoryNimmyRepository();
       await repository.initialize();
-      warning = 'Local persistence is unavailable. Data will last for this session only.';
+      warning =
+          'Local persistence is unavailable. Data will last for this session only.';
     }
 
     ReminderScheduler scheduler = LocalNotificationService();

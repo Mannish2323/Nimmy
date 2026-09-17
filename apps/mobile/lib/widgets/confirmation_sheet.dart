@@ -59,20 +59,16 @@ class ConfirmationSheet extends StatelessWidget {
             children: [
               Expanded(
                 child: OutlinedButton(
-                  onPressed: () => Navigator.pop(
-                    context,
-                    ConfirmationDecision.cancel,
-                  ),
+                  onPressed: () =>
+                      Navigator.pop(context, ConfirmationDecision.cancel),
                   child: const Text('Cancel'),
                 ),
               ),
               const SizedBox(width: NimmySpacing.sm),
               Expanded(
                 child: OutlinedButton(
-                  onPressed: () => Navigator.pop(
-                    context,
-                    ConfirmationDecision.edit,
-                  ),
+                  onPressed: () =>
+                      Navigator.pop(context, ConfirmationDecision.edit),
                   child: const Text('Edit'),
                 ),
               ),
@@ -88,10 +84,8 @@ class ConfirmationSheet extends StatelessWidget {
               icon: proposal.intent == NimmyIntent.saveMemory
                   ? Icons.bookmark_add_rounded
                   : Icons.alarm_add_rounded,
-              onPressed: () => Navigator.pop(
-                context,
-                ConfirmationDecision.confirm,
-              ),
+              onPressed: () =>
+                  Navigator.pop(context, ConfirmationDecision.confirm),
             ),
           ),
         ],
