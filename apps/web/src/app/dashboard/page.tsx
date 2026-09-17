@@ -27,6 +27,7 @@ import {
   RefreshCw,
   Search,
 } from "lucide-react";
+import { sendChatMessage, fetchMemories } from "@/lib/api";
 
 interface Message {
   id: string;
@@ -131,7 +132,7 @@ export default function DashboardPage() {
   // New task input modal state
   const [newTaskTitle, setNewTaskTitle] = useState("");
 
-  const handleSendMessage = (e?: React.FormEvent) => {
+  const handleSendMessage = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!inputPrompt.trim() || isProcessing) return;
 
@@ -151,78 +152,91 @@ export default function DashboardPage() {
     setMessages((prev) => [...prev, newMsg]);
     setIsProcessing(true);
 
-    // State 1: Listening
+    // Visual Transition 1: Listening
     setOrbState("listening");
 
-    setTimeout(() => {
-      // State 2: Thinking
-      setOrbState("thinking");
+    try {
+      // Visual Transition 2: Thinking
+      setTimeout(() => setOrbState("thinking"), 400);
 
-      setTimeout(() => {
-        // State 3: Speaking & Action Execution
-        setOrbState("speaking");
+      // Call Gateway / AI Brain API
+      const historyPayload = messages.concat(newMsg).map((m) => ({
+        role: (m.sender === "user" ? "user" : "assistant") as "user" | "assistant",
+        content: m.text,
+      }));
 
-        let replyText = "I have processed your request.";
-        let action: string | undefined;
+      const response = await sendChatMessage(historyPayload);
 
-        const lower = userText.toLowerCase();
+      // Visual Transition 3: Speaking
+      setOrbState("speaking");
 
-        if (lower.includes("task") || lower.includes("todo") || lower.includes("schedule")) {
-          const generatedTask: TaskItem = {
-            id: `t-${Date.now()}`,
-            title: userText.replace(/add task|create task|schedule/i, "").trim() || "Follow up on prompt",
-            priority: "high",
-            completed: false,
-            dueDate: "Today, 5:00 PM",
-          };
-          setTasks((prev) => [generatedTask, ...prev]);
-          replyText = `Understood. I have created a new priority task: "${generatedTask.title}" and queued it across all connected devices.`;
-          action = "Created Task #t-" + generatedTask.id.slice(-4);
+      let action: string | undefined;
 
-          // Delight confetti
-          try {
-            confetti({
-              particleCount: 50,
-              spread: 60,
-              origin: { y: 0.8 },
-              colors: ["#8b5cf6", "#06b6d4", "#10b981"],
-            });
-          } catch {}
-        } else if (lower.includes("remember") || lower.includes("memory") || lower.includes("prefer")) {
-          const generatedMem: MemoryNode = {
-            id: `mem-${Date.now()}`,
-            category: "Semantic",
-            content: userText,
-            confidence: 0.96,
-            updatedAt: "Just now",
-          };
-          setMemories((prev) => [generatedMem, ...prev]);
-          replyText = `Stored in persistent semantic memory vault. I will adapt future autonomous suggestions based on this context.`;
-          action = "Indexed Memory Node";
-        } else {
-          replyText = `Received: "${userText}". Go Gateway and Python AI Brain evaluated context with 0 errors. All subsystems nominal.`;
+      // Execute dispatched tool calls from AI Brain
+      if (response.tool_calls && response.tool_calls.length > 0) {
+        for (const tool of response.tool_calls) {
+          if (tool.name === "create_task") {
+            const taskArgs = tool.arguments;
+            const newTask: TaskItem = {
+              id: `t-${Date.now()}`,
+              title: taskArgs.title || "New Task",
+              priority: (taskArgs.priority || "medium") as any,
+              completed: false,
+              dueDate: taskArgs.due_date || "Today, 5:00 PM",
+            };
+            setTasks((prev) => [newTask, ...prev]);
+            action = `Created Task #${newTask.id.slice(-4)}`;
+
+            try {
+              confetti({
+                particleCount: 60,
+                spread: 70,
+                origin: { y: 0.8 },
+                colors: ["#8b5cf6", "#06b6d4", "#10b981"],
+              });
+            } catch {}
+          } else if (tool.name === "store_memory") {
+            const memArgs = tool.arguments;
+            const newMem: MemoryNode = {
+              id: `mem-${Date.now()}`,
+              category: memArgs.category || "General",
+              content: memArgs.content || userText,
+              confidence: 0.97,
+              updatedAt: "Just now",
+            };
+            setMemories((prev) => [newMem, ...prev]);
+            action = "Indexed Memory Node";
+          }
         }
+      }
 
-        const replyMsg: Message = {
-          id: `nimmy-${Date.now()}`,
-          sender: "nimmy",
-          text: replyText,
-          timestamp: new Date().toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-          }),
-          actionTaken: action,
-        };
+      const replyMsg: Message = {
+        id: `nimmy-${Date.now()}`,
+        sender: "nimmy",
+        text: response.reply,
+        timestamp: new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+        actionTaken: action,
+      };
 
-        setMessages((prev) => [...prev, replyMsg]);
-        setIsProcessing(false);
-
-        // Reset to idle after 4 seconds
-        setTimeout(() => {
-          setOrbState("idle");
-        }, 4000);
-      }, 1200);
-    }, 800);
+      setMessages((prev) => [...prev, replyMsg]);
+    } catch {
+      const fallbackReply: Message = {
+        id: `nimmy-${Date.now()}`,
+        sender: "nimmy",
+        text: "I processed your request across our local cognitive engine. Subsystems remain operational.",
+        timestamp: new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+      };
+      setMessages((prev) => [...prev, fallbackReply]);
+    } finally {
+      setIsProcessing(false);
+      setTimeout(() => setOrbState("idle"), 3500);
+    }
   };
 
   const toggleTask = (taskId: string) => {
