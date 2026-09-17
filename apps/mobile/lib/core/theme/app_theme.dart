@@ -1,155 +1,208 @@
-// 🟣 NIMMY — App Theme
-// ====================
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
-class NimmyColors {
-  // Primary palette
-  static const Color purple = Color(0xFFA855F7);
-  static const Color purpleLight = Color(0xFFC084FC);
-  static const Color purpleDark = Color(0xFF7C3AED);
-  static const Color purpleGlow = Color(0x40A855F7);
+abstract final class NimmyColors {
+  static const Color voidBlack = Color(0xFF05050A);
+  static const Color background = Color(0xFF080810);
+  static const Color surface = Color(0xFF11111C);
+  static const Color surfaceRaised = Color(0xFF181827);
+  static const Color surfaceSoft = Color(0xFF202034);
+  static const Color border = Color(0xFF2B2A43);
+  static const Color borderBright = Color(0xFF4A4770);
 
-  // Accent
-  static const Color cyan = Color(0xFF06B6D4);
-  static const Color pink = Color(0xFFEC4899);
-  static const Color amber = Color(0xFFF59E0B);
-  static const Color green = Color(0xFF10B981);
-  static const Color red = Color(0xFFEF4444);
+  static const Color purple = Color(0xFFA970FF);
+  static const Color purpleLight = Color(0xFFD4B8FF);
+  static const Color purpleDark = Color(0xFF6E3DEB);
+  static const Color indigo = Color(0xFF5B66F6);
+  static const Color cyan = Color(0xFF54D9FF);
+  static const Color pink = Color(0xFFFF5DA8);
+  static const Color amber = Color(0xFFFFBE5C);
+  static const Color green = Color(0xFF5CE0A0);
+  static const Color red = Color(0xFFFF6680);
 
-  // Surfaces (dark mode)
-  static const Color background = Color(0xFF0A0A0F);
-  static const Color surface = Color(0xFF12121A);
-  static const Color surfaceLight = Color(0xFF1A1A2E);
-  static const Color surfaceElevated = Color(0xFF222236);
-  static const Color border = Color(0xFF2A2A40);
+  static const Color textPrimary = Color(0xFFF7F5FF);
+  static const Color textSecondary = Color(0xFFBBB7CF);
+  static const Color textMuted = Color(0xFF817D96);
 
-  // Text
-  static const Color textPrimary = Color(0xFFF1F1F6);
-  static const Color textSecondary = Color(0xFF9CA3AF);
-  static const Color textMuted = Color(0xFF6B7280);
+  static const Color purpleGlow = Color(0x55A970FF);
+
+  static const LinearGradient primaryGradient = LinearGradient(
+    colors: [purpleDark, purple, indigo],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+}
+
+abstract final class NimmySpacing {
+  static const double xxs = 4;
+  static const double xs = 8;
+  static const double sm = 12;
+  static const double md = 16;
+  static const double lg = 20;
+  static const double xl = 24;
+  static const double xxl = 32;
+  static const double hero = 48;
+}
+
+abstract final class NimmyRadius {
+  static const double sm = 10;
+  static const double md = 14;
+  static const double lg = 18;
+  static const double xl = 24;
+  static const double pill = 999;
+}
+
+abstract final class NimmyDurations {
+  static const Duration fast = Duration(milliseconds: 160);
+  static const Duration medium = Duration(milliseconds: 260);
+  static const Duration slow = Duration(milliseconds: 520);
 }
 
 class NimmyTheme {
   static ThemeData get darkTheme {
-    return ThemeData(
+    const scheme = ColorScheme.dark(
+      primary: NimmyColors.purple,
+      secondary: NimmyColors.cyan,
+      surface: NimmyColors.surface,
+      error: NimmyColors.red,
+      onPrimary: Colors.white,
+      onSecondary: NimmyColors.voidBlack,
+      onSurface: NimmyColors.textPrimary,
+      onError: Colors.white,
+    );
+
+    final base = ThemeData(
+      useMaterial3: true,
       brightness: Brightness.dark,
+      colorScheme: scheme,
       scaffoldBackgroundColor: NimmyColors.background,
-      primaryColor: NimmyColors.purple,
-      colorScheme: const ColorScheme.dark(
-        primary: NimmyColors.purple,
-        secondary: NimmyColors.cyan,
-        surface: NimmyColors.surface,
-        error: NimmyColors.red,
-        onPrimary: Colors.white,
-        onSecondary: Colors.white,
-        onSurface: NimmyColors.textPrimary,
-      ),
-      textTheme: GoogleFonts.interTextTheme(
-        const TextTheme(
-          displayLarge: TextStyle(
-            fontSize: 32,
-            fontWeight: FontWeight.w700,
-            color: NimmyColors.textPrimary,
-            letterSpacing: -0.5,
-          ),
-          displayMedium: TextStyle(
-            fontSize: 28,
-            fontWeight: FontWeight.w700,
-            color: NimmyColors.textPrimary,
-            letterSpacing: -0.3,
-          ),
-          headlineLarge: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.w600,
-            color: NimmyColors.textPrimary,
-          ),
-          headlineMedium: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            color: NimmyColors.textPrimary,
-          ),
-          titleLarge: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-            color: NimmyColors.textPrimary,
-          ),
-          titleMedium: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-            color: NimmyColors.textPrimary,
-          ),
-          bodyLarge: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w400,
-            color: NimmyColors.textPrimary,
-          ),
-          bodyMedium: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w400,
-            color: NimmyColors.textSecondary,
-          ),
-          bodySmall: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w400,
-            color: NimmyColors.textMuted,
-          ),
-          labelLarge: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: NimmyColors.textPrimary,
-          ),
-        ),
-      ),
-      cardTheme: CardThemeData(
-        color: NimmyColors.surface,
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: const BorderSide(color: NimmyColors.border, width: 1),
-        ),
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      ),
-      appBarTheme: const AppBarTheme(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        centerTitle: false,
-        titleTextStyle: TextStyle(
-          fontSize: 20,
+      splashFactory: InkSparkle.splashFactory,
+    );
+
+    return base.copyWith(
+      textTheme: base.textTheme.copyWith(
+        displayLarge: const TextStyle(
+          fontSize: 36,
+          height: 1.05,
           fontWeight: FontWeight.w700,
+          letterSpacing: -1.2,
+          color: NimmyColors.textPrimary,
+        ),
+        headlineLarge: const TextStyle(
+          fontSize: 27,
+          height: 1.15,
+          fontWeight: FontWeight.w700,
+          letterSpacing: -0.6,
+          color: NimmyColors.textPrimary,
+        ),
+        headlineMedium: const TextStyle(
+          fontSize: 21,
+          height: 1.2,
+          fontWeight: FontWeight.w600,
+          letterSpacing: -0.3,
+          color: NimmyColors.textPrimary,
+        ),
+        titleLarge: const TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.w600,
+          color: NimmyColors.textPrimary,
+        ),
+        titleMedium: const TextStyle(
+          fontSize: 15,
+          fontWeight: FontWeight.w600,
+          color: NimmyColors.textPrimary,
+        ),
+        bodyLarge: const TextStyle(
+          fontSize: 16,
+          height: 1.45,
+          color: NimmyColors.textPrimary,
+        ),
+        bodyMedium: const TextStyle(
+          fontSize: 14,
+          height: 1.45,
+          color: NimmyColors.textSecondary,
+        ),
+        bodySmall: const TextStyle(
+          fontSize: 12,
+          height: 1.35,
+          color: NimmyColors.textMuted,
+        ),
+        labelLarge: const TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
           color: NimmyColors.textPrimary,
         ),
       ),
-      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-        backgroundColor: NimmyColors.surface,
-        selectedItemColor: NimmyColors.purple,
-        unselectedItemColor: NimmyColors.textMuted,
-        type: BottomNavigationBarType.fixed,
+      appBarTheme: const AppBarTheme(
         elevation: 0,
+        scrolledUnderElevation: 0,
+        backgroundColor: Colors.transparent,
+        foregroundColor: NimmyColors.textPrimary,
+        centerTitle: false,
       ),
-      floatingActionButtonTheme: const FloatingActionButtonThemeData(
-        backgroundColor: NimmyColors.purple,
-        foregroundColor: Colors.white,
-        elevation: 4,
-        shape: CircleBorder(),
+      cardTheme: CardThemeData(
+        margin: EdgeInsets.zero,
+        elevation: 0,
+        color: NimmyColors.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(NimmyRadius.lg),
+          side: const BorderSide(color: NimmyColors.border),
+        ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: NimmyColors.surfaceLight,
+        fillColor: NimmyColors.surfaceRaised,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: NimmySpacing.md,
+          vertical: NimmySpacing.md,
+        ),
+        hintStyle: const TextStyle(color: NimmyColors.textMuted),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(NimmyRadius.md),
           borderSide: const BorderSide(color: NimmyColors.border),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(NimmyRadius.md),
           borderSide: const BorderSide(color: NimmyColors.border),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: NimmyColors.purple, width: 2),
+          borderRadius: BorderRadius.circular(NimmyRadius.md),
+          borderSide: const BorderSide(color: NimmyColors.purple, width: 1.4),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        hintStyle: const TextStyle(color: NimmyColors.textMuted),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(NimmyRadius.md),
+          borderSide: const BorderSide(color: NimmyColors.red),
+        ),
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          minimumSize: const Size(48, 52),
+          padding: const EdgeInsets.symmetric(horizontal: NimmySpacing.lg),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(NimmyRadius.md),
+          ),
+          textStyle: const TextStyle(fontWeight: FontWeight.w700),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          minimumSize: const Size(48, 52),
+          foregroundColor: NimmyColors.textPrimary,
+          side: const BorderSide(color: NimmyColors.borderBright),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(NimmyRadius.md),
+          ),
+        ),
+      ),
+      dividerTheme: const DividerThemeData(
+        color: NimmyColors.border,
+        thickness: 1,
+        space: 1,
+      ),
+      bottomSheetTheme: const BottomSheetThemeData(
+        backgroundColor: NimmyColors.surface,
+        modalBackgroundColor: NimmyColors.surface,
+        showDragHandle: true,
+        dragHandleColor: NimmyColors.borderBright,
       ),
     );
   }

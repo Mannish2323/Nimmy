@@ -15,7 +15,7 @@ class PermissionService {
     return _map(value);
   }
 
-  Future<bool> openAppSettings() => openAppSettings();
+  Future<bool> openSettings() => openAppSettings();
 
   Permission _platformPermission(NimmyPermission permission) {
     return switch (permission) {
