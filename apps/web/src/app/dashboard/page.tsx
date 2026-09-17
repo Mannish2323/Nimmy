@@ -26,8 +26,11 @@ import {
   ChevronRight,
   RefreshCw,
   Search,
+  ThumbsUp,
+  ThumbsDown,
 } from "lucide-react";
-import { sendChatMessage, fetchMemories } from "@/lib/api";
+import { sendChatMessage, fetchMemories, MemoryNode } from "@/lib/api";
+import { NimmyFeedbackModal } from "@/components/NimmyFeedbackModal";
 
 interface Message {
   id: string;
@@ -45,14 +48,6 @@ interface TaskItem {
   dueDate: string;
 }
 
-interface MemoryNode {
-  id: string;
-  category: string;
-  content: string;
-  confidence: number;
-  updatedAt: string;
-}
-
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<
     "overview" | "tasks" | "calendar" | "notes" | "memory" | "telemetry"
@@ -62,8 +57,19 @@ export default function DashboardPage() {
   const [inputPrompt, setInputPrompt] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
 
+  // Feedback & Correction State ("Nimmy Galat Hai")
+  const [feedbackModalOpen, setFeedbackModalOpen] = useState(false);
+  const [targetMessage, setTargetMessage] = useState<{ id: string; text: string }>({ id: "", text: "" });
+  const [likedMessages, setLikedMessages] = useState<Record<string, boolean>>({});
+
   // Chat Messages
   const [messages, setMessages] = useState<Message[]>([
+    {
+      id: "nimmy-init-1",
+      sender: "nimmy",
+      text: "Nimmy Intelligence Layer online. Memory Vault, Context Resolver, and Provenance tracking active.",
+      timestamp: "12:00 PM",
+    },
     {
       id: "msg-1",
       sender: "nimmy",
@@ -495,9 +501,34 @@ export default function DashboardPage() {
                           </div>
                         )}
                       </div>
-                      <span className="text-[9px] text-zinc-500 mt-1 px-1 font-mono">
-                        {m.timestamp}
-                      </span>
+                      <div className="flex items-center gap-2 mt-1 px-1 text-[9px] text-zinc-500 font-mono">
+                        <span>{m.timestamp}</span>
+                        {m.sender === "nimmy" && (
+                          <div className="flex items-center gap-1 ml-2">
+                            <button
+                              type="button"
+                              onClick={() => setLikedMessages((prev) => ({ ...prev, [m.id]: true }))}
+                              className={`p-1 rounded hover:text-emerald-400 transition-colors cursor-pointer ${
+                                likedMessages[m.id] ? "text-emerald-400 font-bold" : "text-zinc-500"
+                              }`}
+                              title="Helpful response"
+                            >
+                              <ThumbsUp className="w-2.5 h-2.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setTargetMessage({ id: m.id, text: m.text });
+                                setFeedbackModalOpen(true);
+                              }}
+                              className="p-1 rounded hover:text-red-400 transition-colors text-zinc-500 cursor-pointer"
+                              title="Nimmy Galat Hai (Report mistake or correction)"
+                            >
+                              <ThumbsDown className="w-2.5 h-2.5" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   ))}
                   {isProcessing && (
@@ -631,19 +662,22 @@ export default function DashboardPage() {
                   {memories.map((mem) => (
                     <div
                       key={mem.id}
-                      className="p-3 rounded-xl bg-white/[0.02] border border-white/5 text-xs space-y-1"
+                      className="p-3 rounded-xl bg-white/[0.02] border border-white/5 text-xs space-y-1.5 hover:border-purple-500/20 transition-colors"
                     >
                       <div className="flex items-center justify-between text-[10px]">
-                        <span className="text-cyan-400 font-mono">
-                          [{mem.category}]
+                        <span className="text-purple-300 font-mono uppercase px-1.5 py-0.5 rounded bg-purple-500/10">
+                          {mem.category}
                         </span>
-                        <span className="text-zinc-500">{mem.updatedAt}</span>
+                        <span className="text-[9px] text-emerald-400 font-mono font-medium">
+                          {mem.confidence_tier ? mem.confidence_tier.replace("_", " ") : "1.00 Very High"}
+                        </span>
                       </div>
                       <p className="text-zinc-300 text-xs leading-relaxed">
                         {mem.content}
                       </p>
-                      <div className="text-[9px] text-zinc-500 font-mono">
-                        Vector Confidence: {(mem.confidence * 100).toFixed(0)}%
+                      <div className="flex items-center justify-between text-[9px] text-zinc-500 font-mono pt-1 border-t border-white/5">
+                        <span>Source: {mem.source_name || mem.source_type || "User Explicit"}</span>
+                        <span>{mem.updatedAt || "Active"}</span>
                       </div>
                     </div>
                   ))}
@@ -653,6 +687,29 @@ export default function DashboardPage() {
           </div>
         </div>
       </main>
+
+      {/* Nimmy Galat Hai (Correction & Mistake Feedback Modal) */}
+      <NimmyFeedbackModal
+        isOpen={feedbackModalOpen}
+        onClose={() => setFeedbackModalOpen(false)}
+        messageText={targetMessage.text}
+        messageId={targetMessage.id}
+        onCorrectionApplied={(acknowledgedResponse) => {
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: `nimmy-corr-${Date.now()}`,
+              sender: "nimmy",
+              text: acknowledgedResponse,
+              timestamp: new Date().toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              }),
+              actionTaken: "Correction Learned & Priority Updated",
+            },
+          ]);
+        }}
+      />
     </div>
   );
 }

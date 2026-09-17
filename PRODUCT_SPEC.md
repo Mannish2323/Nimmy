@@ -843,9 +843,134 @@ Nimmy MVP is complete only when:
 - No unsupported automation is claimed or implemented.
 - The product visually communicates Nimmy's voice-first holographic identity.
 
-## 25. Canonical Product Statement
+## 26. Nimmy Intelligence Layer (Learning & Memory Engine)
 
-> Nimmy is a voice-first Personal AI OS built around AI, Memory, Tasks, Voice, and Automation. It understands natural commands, uses controlled tools to perform approved actions, asks for confirmation when appropriate, records meaningful activity, and responds truthfully. The first production milestone is Voice → Intent → Controlled Tool → Confirmation → Database → Audit → Voice Response, beginning with `create_reminder(...)` and `save_memory(...)`.
+### 26.1 Fundamental Learning Principle
+> **Nimmy never automatically retrains foundation AI models on user data.**
+> Nimmy's learning is strictly **personalization + memory + feedback + retrieval + provenance + correction + confidence.**
+
+This boundary ensures the system remains predictable, auditable, safe, and privacy-preserving.
+
+### 26.2 The 4 Learning Layers
+```text
+                    NIMMY LEARNING
+                          │
+        ┌─────────────────┼─────────────────┐
+        ↓                 ↓                 ↓
+   User Context       Corrections       Behaviour
+        │                 │                 │
+        ↓                 ↓                 ↓
+     Memory          Feedback Store    Preferences
+        │                 │                 │
+        └─────────────────┼─────────────────┘
+                          ↓
+                    Better Responses
+```
+
+### 26.3 The 8 Typed Memory Classes
+Memory items are strictly segregated into typed categories rather than unstructured text dumps:
+1. **Profile Memory**: Core user account details, identity, and personal metadata.
+2. **Preference Memory**: Ergonomic, aesthetic, and workflow preferences (e.g. "prefers concise responses", "prefers dark violet UI").
+3. **Goal Memory**: Explicit user aspirations and targets (e.g. "wants to launch Nimmy in Q4").
+4. **Project Memory**: System architectures, stack decisions, and project structures (e.g. "Nimmy uses 10 fixed languages").
+5. **Knowledge Memory**: Factual user-provided reference data.
+6. **Event Memory**: Milestone past or future occurrences.
+7. **Idea Memory**: Raw concepts and creative prompts reserved for future exploration.
+8. **Correction Memory**: Records of user corrections and resolved misunderstandings.
+
+### 26.4 Memory Confidence Matrix
+Every memory item holds an explicit confidence score and tier:
+- **Explicit user memory** (`1.00` — Very High): User explicitly commanded "remember this".
+- **User confirmed** (`0.95` — High): User confirmed an AI-suggested memory candidate.
+- **Repeated consistent behavior** (`0.80` — Medium): Inferred from recurring patterns across sessions.
+- **Imported trusted data** (`0.75` — Imported): Ingested from synced Google Calendar, local files, or authenticated integrations.
+- **AI inference** (`0.30` — Inference): Internal AI deduction. **Crucial Rule: AI inferences are capped at 0.30 and are NEVER stored or presented as facts.**
+- **Unverified assumption** (`0.10` — Unverified): Speculative context.
+
+### 26.5 Provenance Engine ("Where did this come from?")
+Every memory node tracks full provenance metadata:
+```text
+PROVENANCE METADATA
+├── source_type: user_explicit | user_confirmed | user_correction | user_note | user_recording | calendar | task_database | connected_service | external_knowledge
+├── source_id: UUID of originating record
+├── source_name: Human-readable origin (e.g. "Voice Session 12", "Client Meeting Note")
+├── source_url: URL for external knowledge
+├── verified: Boolean
+└── created_at: ISO8601 Timestamp
+```
+
+### 26.6 Non-Defensive Mistake & Correction System ("Nimmy Galat Hai")
+When a user corrects Nimmy, the assistant never argues or becomes defensive:
+```text
+User Correction ("Nahi, maine 9 PM bola tha")
+       ↓
+Detect Conflict & Identify Original Record
+       ↓
+Mark Previous Interpretation Incorrect
+       ↓
+Execute Data Correction
+       ↓
+Emit Audit Log Entry
+       ↓
+Feed Correction Pattern to Learning Store
+       ↓
+Truthful & Concise Acknowledgement ("Understood. Corrected reminder time to 9:00 PM.")
+```
+
+### 26.7 Conflict Resolution Precedence
+When stored memory contradicts current user input, Nimmy enforces a strict hierarchy:
+```text
+CURRENT EXPLICIT INSTRUCTION (Highest Priority — ALWAYS Wins)
+          ↓
+USER CONFIRMED INFORMATION
+          ↓
+RECENT USER INFORMATION
+          ↓
+SAVED MEMORY
+          ↓
+CONNECTED DATA
+          ↓
+AI INFERENCE (Lowest Priority)
+```
+*Old memory must never override a current explicit instruction.*
+
+### 26.8 Memory Versioning & Evolution
+When preferences or facts evolve ("I used to prefer X, but now I prefer Y"):
+- The old memory is marked `status = 'superseded'`.
+- A link to `superseded_by` is preserved.
+- `previous_value` is retained in the history array.
+
+### 26.9 Knowledge Source Router
+Queries are partitioned based on data privacy and timeliness:
+- **Personal / Account Queries** -> Local Memory Vault, Tasks, Calendar, Database.
+- **Current / Real-Time Facts** -> Verified external sources and live APIs.
+- **Conceptual / General Knowledge** -> Foundation AI knowledge base.
+
+### 26.10 "What Happened?" Multi-Source Engine
+When the user queries *"Nimmy, kal kya hua?"* or *"What happened today?"*, Nimmy synthesizes a chronological timeline by aggregating:
+1. `tasks` (completed / created)
+2. `calendar_events`
+3. `notes`
+4. `memories`
+5. `recordings` (transcripts)
+6. `audit_logs`
+
+### 26.11 Strict Separation of Concerns (No 5x Duplication)
+- A **Task** lives in `tasks`.
+- A **Reminder** lives in `reminders`.
+- A **Calendar Event** lives in `calendar_events`.
+- A **Memory** lives in `memories`.
+- An **Action Record** lives in `audit_logs`.
+The Data Router routes each datum to its singular source of truth.
+
+### 26.12 Prohibited AI Behaviors
+1. ❌ Never convert an AI guess or inference into a permanent fact.
+2. ❌ Never retrieve or leak deleted memory items.
+3. ❌ Never allow old memory to override a current explicit user command.
+4. ❌ Never save transient conversational banter as permanent memory.
+5. ❌ Never claim external information is "verified" without provenance metadata.
+6. ❌ Never falsely claim a failed tool action was successful.
+7. ❌ Never silently transmit user data for foundation model pretraining.
 
 ## Change Control
 
@@ -859,3 +984,4 @@ Any future implementation plan, architecture document, prompt, or generated code
 ---
 
 **End of canonical specification.**
+

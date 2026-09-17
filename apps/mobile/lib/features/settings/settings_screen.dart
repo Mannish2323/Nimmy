@@ -1,255 +1,209 @@
-// 🟣 NIMMY — Settings Screen
-// ===========================
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+
+import '../../core/state/nimmy_controller.dart';
 import '../../core/theme/app_theme.dart';
+import '../../widgets/glass_card.dart';
+import '../../widgets/status_badge.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Settings', style: Theme.of(context).textTheme.headlineLarge),
-            const SizedBox(height: 24),
-
-            // Profile
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    NimmyColors.purpleDark.withValues(alpha: 0.3),
-                    NimmyColors.surface,
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: NimmyColors.purple.withValues(alpha: 0.3)),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 56,
-                    height: 56,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: const LinearGradient(
-                        colors: [NimmyColors.purpleDark, NimmyColors.purple],
-                      ),
-                    ),
-                    child: const Center(
-                      child: Text(
-                        'N',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Nimmy User',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                            color: NimmyColors.textPrimary,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          'Premium Plan',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: NimmyColors.purple,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Icon(Icons.chevron_right, color: NimmyColors.textMuted),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 24),
-
-            _SettingsSection(
-              title: 'Nimmy AI',
-              items: [
-                _SettingItem(Icons.record_voice_over_rounded, 'Voice', 'Default', NimmyColors.purple),
-                _SettingItem(Icons.psychology_rounded, 'AI Model', 'Gemini Pro', NimmyColors.cyan),
-                _SettingItem(Icons.memory_rounded, 'Memory', 'Enabled', NimmyColors.green),
-                _SettingItem(Icons.auto_awesome_rounded, 'Smart Suggestions', 'On', NimmyColors.amber),
-              ],
-            ),
-
-            _SettingsSection(
-              title: 'Android Native Core (Kotlin)',
-              items: [
-                _SettingItem(Icons.android_rounded, 'Foreground Daemon', 'Active', NimmyColors.green),
-                _SettingItem(Icons.graphic_eq_rounded, 'AudioRecord Hardware', '16kHz PCM', NimmyColors.purple),
-                _SettingItem(Icons.alarm_on_rounded, 'AlarmManager Bridge', 'Enabled', NimmyColors.cyan),
-                _SettingItem(Icons.battery_charging_full_rounded, 'Device Telemetry', 'Synced', NimmyColors.amber),
-              ],
-            ),
-
-            _SettingsSection(
-              title: 'Appearance',
-              items: [
-                _SettingItem(Icons.dark_mode_rounded, 'Theme', 'Dark', NimmyColors.purple),
-                _SettingItem(Icons.language_rounded, 'Language', 'English', NimmyColors.cyan),
-                _SettingItem(Icons.text_fields_rounded, 'Font Size', 'Medium', NimmyColors.amber),
-              ],
-            ),
-
-            _SettingsSection(
-              title: 'Notifications',
-              items: [
-                _SettingItem(Icons.notifications_rounded, 'Push Notifications', 'On', NimmyColors.green),
-                _SettingItem(Icons.alarm_rounded, 'Reminders', 'On', NimmyColors.amber),
-                _SettingItem(Icons.do_not_disturb_rounded, 'Do Not Disturb', 'Off', NimmyColors.red),
-              ],
-            ),
-
-            _SettingsSection(
-              title: 'Data & Privacy',
-              items: [
-                _SettingItem(Icons.cloud_sync_rounded, 'Sync', 'Supabase', NimmyColors.cyan),
-                _SettingItem(Icons.lock_rounded, 'Encryption', 'Enabled', NimmyColors.green),
-                _SettingItem(Icons.delete_outline_rounded, 'Clear Data', '', NimmyColors.red),
-              ],
-            ),
-
-            const SizedBox(height: 24),
-
-            // Version
-            Center(
-              child: Text(
-                'Nimmy v1.0.0 • Built with ❤️',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: NimmyColors.textMuted,
-                ),
-              ),
-            ),
-            const SizedBox(height: 40),
-          ],
+    final controller = context.watch<NimmyController>();
+    return Scaffold(
+      appBar: AppBar(title: const Text('Settings')),
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(
+          NimmySpacing.lg,
+          NimmySpacing.sm,
+          NimmySpacing.lg,
+          NimmySpacing.xl,
         ),
+        children: [
+          GlassCard(
+            borderColor: NimmyColors.purple.withValues(alpha: 0.35),
+            child: Row(
+              children: [
+                Container(
+                  width: 52,
+                  height: 52,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: NimmyColors.primaryGradient,
+                  ),
+                  child: const Center(
+                    child: Text(
+                      'N',
+                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: NimmySpacing.sm),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Local profile', style: Theme.of(context).textTheme.titleLarge),
+                      const SizedBox(height: 3),
+                      Text(
+                        'Authentication setup is the next foundation step.',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                ),
+                const StatusBadge(label: 'LOCAL', color: NimmyColors.amber),
+              ],
+            ),
+          ),
+          const SizedBox(height: NimmySpacing.xl),
+          _Section(
+            title: 'Nimmy',
+            children: [
+              _SettingsTile(
+                icon: Icons.record_voice_over_outlined,
+                title: 'Voice',
+                subtitle: 'System speech • English (India)',
+                badge: 'ACTIVE',
+                onTap: () => context.push('/voice'),
+              ),
+              _SettingsTile(
+                icon: Icons.shield_outlined,
+                title: 'Permissions',
+                subtitle: 'Microphone and notification controls',
+                onTap: () => context.push('/permissions'),
+              ),
+              _SettingsTile(
+                icon: Icons.auto_awesome_outlined,
+                title: 'Memory',
+                subtitle: '${controller.memories.length} explicitly saved',
+                onTap: () => context.go('/memory'),
+              ),
+            ],
+          ),
+          _Section(
+            title: 'Data & privacy',
+            children: [
+              _SettingsTile(
+                icon: Icons.cloud_off_outlined,
+                title: 'Cloud sync',
+                subtitle: controller.isLocalOnly
+                    ? 'Not configured • data stays on this device'
+                    : 'Connected',
+                badge: controller.isLocalOnly ? 'LOCAL ONLY' : 'SYNCED',
+              ),
+              _SettingsTile(
+                icon: Icons.history_rounded,
+                title: 'Action history',
+                subtitle: '${controller.auditEvents.length} structured audit events',
+                onTap: () => context.push('/audit'),
+              ),
+              const _SettingsTile(
+                icon: Icons.fingerprint_rounded,
+                title: 'Biometric app lock',
+                subtitle: 'Not available in this build',
+                badge: 'COMING SOON',
+              ),
+              const _SettingsTile(
+                icon: Icons.graphic_eq_rounded,
+                title: 'Recording',
+                subtitle: 'No recording capability is enabled',
+                badge: 'NOT AVAILABLE',
+              ),
+            ],
+          ),
+          const _Section(
+            title: 'Appearance & app',
+            children: [
+              _SettingsTile(
+                icon: Icons.dark_mode_outlined,
+                title: 'Appearance',
+                subtitle: 'Dark theme • reduced motion follows system',
+                badge: 'DARK',
+              ),
+              _SettingsTile(
+                icon: Icons.info_outline_rounded,
+                title: 'About Nimmy',
+                subtitle: 'Version 1.0.0 • MVP foundation',
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
 }
 
-class _SettingsSection extends StatelessWidget {
-  final String title;
-  final List<_SettingItem> items;
+class _Section extends StatelessWidget {
+  const _Section({required this.title, required this.children});
 
-  const _SettingsSection({required this.title, required this.items});
+  final String title;
+  final List<Widget> children;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(bottom: 10, top: 8),
-          child: Text(
-            title,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: NimmyColors.textMuted,
-              letterSpacing: 1,
+    return Padding(
+      padding: const EdgeInsets.only(bottom: NimmySpacing.xl),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(left: 2, bottom: NimmySpacing.xs),
+            child: Text(
+              title.toUpperCase(),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    letterSpacing: 1.1,
+                    fontWeight: FontWeight.w700,
+                  ),
             ),
           ),
-        ),
-        Container(
-          decoration: BoxDecoration(
-            color: NimmyColors.surface,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: NimmyColors.border),
+          GlassCard(
+            padding: EdgeInsets.zero,
+            child: Column(
+              children: List.generate(children.length * 2 - 1, (index) {
+                if (index.isOdd) {
+                  return const Divider(indent: 58);
+                }
+                return children[index ~/ 2];
+              }),
+            ),
           ),
-          child: Column(
-            children: items.asMap().entries.map((entry) {
-              final i = entry.key;
-              final item = entry.value;
-              return Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 36,
-                          height: 36,
-                          decoration: BoxDecoration(
-                            color: item.color.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Icon(item.icon, color: item.color, size: 18),
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Text(
-                            item.label,
-                            style: const TextStyle(
-                              fontSize: 15,
-                              color: NimmyColors.textPrimary,
-                            ),
-                          ),
-                        ),
-                        if (item.value.isNotEmpty)
-                          Text(
-                            item.value,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: NimmyColors.textMuted,
-                            ),
-                          ),
-                        const SizedBox(width: 4),
-                        const Icon(
-                          Icons.chevron_right,
-                          color: NimmyColors.textMuted,
-                          size: 20,
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (i < items.length - 1)
-                    Divider(
-                      height: 1,
-                      indent: 66,
-                      color: NimmyColors.border.withValues(alpha: 0.5),
-                    ),
-                ],
-              );
-            }).toList(),
-          ),
-        ),
-        const SizedBox(height: 16),
-      ],
+        ],
+      ),
     );
   }
 }
 
-class _SettingItem {
-  final IconData icon;
-  final String label;
-  final String value;
-  final Color color;
+class _SettingsTile extends StatelessWidget {
+  const _SettingsTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    this.badge,
+    this.onTap,
+  });
 
-  _SettingItem(this.icon, this.label, this.value, this.color);
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final String? badge;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      onTap: onTap,
+      leading: Icon(icon, color: NimmyColors.purpleLight),
+      title: Text(title),
+      subtitle: Text(subtitle),
+      trailing: badge != null
+          ? StatusBadge(label: badge!)
+          : onTap != null
+              ? const Icon(Icons.chevron_right_rounded)
+              : null,
+    );
+  }
 }

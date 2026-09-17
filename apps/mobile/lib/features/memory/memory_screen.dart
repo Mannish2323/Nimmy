@@ -1,244 +1,306 @@
-// 🟣 NIMMY — Memory Screen
-// =========================
 import 'package:flutter/material.dart';
-import '../../core/theme/app_theme.dart';
+import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 
-class MemoryScreen extends StatelessWidget {
+import '../../core/state/nimmy_controller.dart';
+import '../../core/theme/app_theme.dart';
+import '../../models/memory.dart';
+import '../../widgets/empty_state.dart';
+import '../../widgets/glass_card.dart';
+import '../../widgets/status_badge.dart';
+
+class MemoryScreen extends StatefulWidget {
   const MemoryScreen({super.key});
 
   @override
+  State<MemoryScreen> createState() => _MemoryScreenState();
+}
+
+class _MemoryScreenState extends State<MemoryScreen> {
+  final _searchController = TextEditingController();
+  MemoryCategory? _category;
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final memories = [
-      _MemoryItem('Prefers dark mode in all apps', 'preference', 9, '2 days ago'),
-      _MemoryItem('Works as a software developer', 'fact', 10, '1 week ago'),
-      _MemoryItem('Has a meeting every Tuesday at 10 AM', 'habit', 7, '3 days ago'),
-      _MemoryItem('Interested in AI and machine learning', 'insight', 8, '5 days ago'),
-      _MemoryItem('Best friend is Alex — often mentioned', 'relationship', 6, '1 week ago'),
-      _MemoryItem('Prefers concise summaries over details', 'preference', 8, '4 days ago'),
-      _MemoryItem('Birthday is March 15', 'fact', 9, '2 weeks ago'),
-      _MemoryItem('Usually exercises in the morning', 'habit', 5, '1 week ago'),
-    ];
+    final controller = context.watch<NimmyController>();
+    final query = _searchController.text.trim().toLowerCase();
+    final memories = controller.memories.where((memory) {
+      final matchesCategory = _category == null || memory.category == _category;
+      final matchesQuery = query.isEmpty ||
+          memory.content.toLowerCase().contains(query) ||
+          memory.category.name.contains(query);
+      return matchesCategory && matchesQuery;
+    }).toList();
 
     return SafeArea(
+      bottom: false,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-            child: Column(
+            padding: const EdgeInsets.fromLTRB(
+              NimmySpacing.lg,
+              NimmySpacing.xl,
+              NimmySpacing.lg,
+              0,
+            ),
+            child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Memory', style: Theme.of(context).textTheme.headlineLarge),
-                const SizedBox(height: 4),
-                Text(
-                  'What Nimmy remembers about you',
-                  style: Theme.of(context).textTheme.bodyMedium,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Memory', style: Theme.of(context).textTheme.headlineLarge),
+                      const SizedBox(height: 4),
+                      Text(
+                        'What Nimmy remembers—only with your approval.',
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton.filled(
+                  tooltip: 'Save with Nimmy',
+                  onPressed: () => context.push('/voice'),
+                  icon: const Icon(Icons.add_rounded),
                 ),
               ],
             ),
           ),
-
-          const SizedBox(height: 20),
-
-          // Memory stats
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
+            padding: const EdgeInsets.fromLTRB(
+              NimmySpacing.lg,
+              NimmySpacing.lg,
+              NimmySpacing.lg,
+              NimmySpacing.sm,
+            ),
+            child: TextField(
+              controller: _searchController,
+              onChanged: (_) => setState(() {}),
+              decoration: InputDecoration(
+                hintText: 'Search your memories…',
+                prefixIcon: const Icon(Icons.search_rounded),
+                suffixIcon: query.isEmpty
+                    ? null
+                    : IconButton(
+                        tooltip: 'Clear search',
+                        onPressed: () {
+                          _searchController.clear();
+                          setState(() {});
+                        },
+                        icon: const Icon(Icons.close_rounded),
+                      ),
+              ),
+            ),
+          ),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: NimmySpacing.lg),
             child: Row(
               children: [
-                _MemoryStatChip('${memories.length}', 'Total', NimmyColors.purple),
-                const SizedBox(width: 10),
-                _MemoryStatChip('3', 'Facts', NimmyColors.cyan),
-                const SizedBox(width: 10),
-                _MemoryStatChip('2', 'Habits', NimmyColors.amber),
-                const SizedBox(width: 10),
-                _MemoryStatChip('2', 'Prefs', NimmyColors.green),
+                ChoiceChip(
+                  label: const Text('All'),
+                  selected: _category == null,
+                  onSelected: (_) => setState(() => _category = null),
+                ),
+                const SizedBox(width: NimmySpacing.xs),
+                ...[
+                  MemoryCategory.preference,
+                  MemoryCategory.project,
+                  MemoryCategory.goal,
+                  MemoryCategory.decision,
+                  MemoryCategory.note,
+                ].map(
+                  (category) => Padding(
+                    padding: const EdgeInsets.only(right: NimmySpacing.xs),
+                    child: ChoiceChip(
+                      label: Text(_categoryLabel(category)),
+                      selected: _category == category,
+                      onSelected: (_) => setState(() => _category = category),
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
-
-          const SizedBox(height: 20),
-
-          // Memory list
+          const SizedBox(height: NimmySpacing.sm),
           Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              itemCount: memories.length,
-              itemBuilder: (context, index) {
-                return _MemoryCard(memory: memories[index]);
-              },
-            ),
+            child: memories.isEmpty
+                ? NimmyEmptyState(
+                    icon: Icons.auto_awesome_outlined,
+                    title: controller.memories.isEmpty
+                        ? 'Your memory vault is empty'
+                        : 'No matching memories',
+                    message: controller.memories.isEmpty
+                        ? 'Say “Nimmy, remember this…” to save something explicitly.'
+                        : 'Try a different search or category.',
+                    actionLabel:
+                        controller.memories.isEmpty ? 'Talk to Nimmy' : null,
+                    onAction: controller.memories.isEmpty
+                        ? () => context.push('/voice')
+                        : null,
+                  )
+                : RefreshIndicator(
+                    color: NimmyColors.purple,
+                    onRefresh: controller.refresh,
+                    child: ListView.separated(
+                      padding: const EdgeInsets.fromLTRB(
+                        NimmySpacing.lg,
+                        0,
+                        NimmySpacing.lg,
+                        112,
+                      ),
+                      itemCount: memories.length,
+                      separatorBuilder: (_, __) =>
+                          const SizedBox(height: NimmySpacing.sm),
+                      itemBuilder: (context, index) => _MemoryCard(
+                        memory: memories[index],
+                        onEdit: () => _edit(memories[index]),
+                        onDelete: () => _delete(memories[index]),
+                      ),
+                    ),
+                  ),
           ),
         ],
       ),
     );
   }
-}
 
-class _MemoryStatChip extends StatelessWidget {
-  final String value;
-  final String label;
-  final Color color;
-
-  const _MemoryStatChip(this.value, this.label, this.color);
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: color.withValues(alpha: 0.2)),
+  Future<void> _edit(NimmyMemory memory) async {
+    final editor = TextEditingController(text: memory.content);
+    final value = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Edit memory'),
+        content: TextField(
+          controller: editor,
+          autofocus: true,
+          minLines: 3,
+          maxLines: 7,
+          decoration: const InputDecoration(labelText: 'Memory'),
         ),
-        child: Column(
-          children: [
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                color: color,
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 11,
-                color: color.withValues(alpha: 0.8),
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, editor.text),
+            child: const Text('Save changes'),
+          ),
+        ],
       ),
     );
+    editor.dispose();
+    if (value == null || !mounted) return;
+    await context.read<NimmyController>().updateMemory(memory, value);
   }
-}
 
-class _MemoryItem {
-  final String content;
-  final String type;
-  final int importance;
-  final String time;
+  Future<void> _delete(NimmyMemory memory) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete this memory?'),
+        content: const Text(
+          'Nimmy will no longer be able to retrieve it. This cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Keep'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: NimmyColors.red),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete permanently'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    await context.read<NimmyController>().deleteMemory(memory);
+  }
 
-  _MemoryItem(this.content, this.type, this.importance, this.time);
+  String _categoryLabel(MemoryCategory category) {
+    final value = category.name;
+    return '${value[0].toUpperCase()}${value.substring(1)}';
+  }
 }
 
 class _MemoryCard extends StatelessWidget {
-  final _MemoryItem memory;
+  const _MemoryCard({
+    required this.memory,
+    required this.onEdit,
+    required this.onDelete,
+  });
 
-  const _MemoryCard({required this.memory});
-
-  IconData _getIcon() {
-    switch (memory.type) {
-      case 'fact': return Icons.info_outline_rounded;
-      case 'preference': return Icons.tune_rounded;
-      case 'habit': return Icons.repeat_rounded;
-      case 'relationship': return Icons.people_outline_rounded;
-      case 'insight': return Icons.lightbulb_outline_rounded;
-      default: return Icons.memory_rounded;
-    }
-  }
-
-  Color _getColor() {
-    switch (memory.type) {
-      case 'fact': return NimmyColors.cyan;
-      case 'preference': return NimmyColors.green;
-      case 'habit': return NimmyColors.amber;
-      case 'relationship': return NimmyColors.pink;
-      case 'insight': return NimmyColors.purple;
-      default: return NimmyColors.textSecondary;
-    }
-  }
+  final NimmyMemory memory;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
-    final color = _getColor();
+    final color = switch (memory.category) {
+      MemoryCategory.preference => NimmyColors.green,
+      MemoryCategory.goal => NimmyColors.amber,
+      MemoryCategory.project => NimmyColors.cyan,
+      MemoryCategory.person => NimmyColors.pink,
+      MemoryCategory.decision => NimmyColors.purpleLight,
+      _ => NimmyColors.indigo,
+    };
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: NimmyColors.surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: NimmyColors.border),
-      ),
-      child: Row(
+    return GlassCard(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(_getIcon(), color: color, size: 20),
+          Row(
+            children: [
+              StatusBadge(label: memory.categoryLabel.toUpperCase(), color: color),
+              const Spacer(),
+              PopupMenuButton<String>(
+                tooltip: 'Memory actions',
+                onSelected: (value) {
+                  if (value == 'edit') onEdit();
+                  if (value == 'delete') onDelete();
+                },
+                itemBuilder: (context) => const [
+                  PopupMenuItem(value: 'edit', child: Text('Edit')),
+                  PopupMenuItem(value: 'delete', child: Text('Delete')),
+                ],
+              ),
+            ],
           ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  memory.content,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: NimmyColors.textPrimary,
-                    height: 1.3,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: color.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        memory.type.toUpperCase(),
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                          color: color,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    // Importance dots
-                    Row(
-                      children: List.generate(5, (i) {
-                        return Container(
-                          width: 6,
-                          height: 6,
-                          margin: const EdgeInsets.only(right: 3),
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: i < (memory.importance / 2).ceil()
-                                ? color
-                                : NimmyColors.surfaceLight,
-                          ),
-                        );
-                      }),
-                    ),
-                    const Spacer(),
-                    Text(
-                      memory.time,
-                      style: const TextStyle(
-                        fontSize: 11,
-                        color: NimmyColors.textMuted,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+          const SizedBox(height: NimmySpacing.sm),
+          Text(memory.content, style: Theme.of(context).textTheme.bodyLarge),
+          const SizedBox(height: NimmySpacing.md),
+          Row(
+            children: [
+              Icon(
+                memory.source == InteractionSource.voice
+                    ? Icons.mic_none_rounded
+                    : Icons.keyboard_rounded,
+                size: 15,
+                color: NimmyColors.textMuted,
+              ),
+              const SizedBox(width: 5),
+              Text(
+                memory.source.name,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              const Spacer(),
+              Text(
+                DateFormat('d MMM • h:mm a').format(memory.createdAt.toLocal()),
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ],
           ),
         ],
       ),

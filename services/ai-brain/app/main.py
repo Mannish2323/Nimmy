@@ -8,7 +8,7 @@ Orchestrates LLM calls, semantic memory retrieval, task parsing, and summarizati
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .config import settings
-from .routers import chat, memory, summarize, tasks
+from .routers import chat, memory, summarize, tasks, intelligence
 
 app = FastAPI(
     title="Nimmy AI Brain",
@@ -32,6 +32,7 @@ app.include_router(chat.router, prefix="/api/v1/chat", tags=["Chat & Cognition"]
 app.include_router(memory.router, prefix="/api/v1/memory", tags=["Semantic Memory"])
 app.include_router(summarize.router, prefix="/api/v1/summarize", tags=["Summarization"])
 app.include_router(tasks.router, prefix="/api/v1/tasks", tags=["Task Intelligence"])
+app.include_router(intelligence.router)
 
 
 @app.get("/")
