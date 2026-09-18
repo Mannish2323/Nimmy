@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 
 import '../../core/state/nimmy_controller.dart';
 import '../../core/theme/app_theme.dart';
-import '../../models/nimmy_state.dart';
 import '../../models/reminder.dart';
 import '../../services/permissions/permission_service.dart';
 import '../../services/voice/voice_service.dart';

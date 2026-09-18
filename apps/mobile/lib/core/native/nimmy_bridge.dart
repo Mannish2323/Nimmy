@@ -5,7 +5,31 @@ import 'package:flutter/services.dart';
 class NimmyNativeBridge {
   static const MethodChannel _channel = MethodChannel('ai.nimmy.nimmy/bridge');
 
-  /// Start native Android foreground daemon service
+  /// Speak through Android's visible system TTS engine. The call is best
+  /// effort; the text response remains the source of truth if TTS is absent.
+  static Future<bool> speak(String text) async {
+    try {
+      final result = await _channel.invokeMethod<bool>('speak', {'text': text});
+      return result ?? false;
+    } on PlatformException {
+      return false;
+    } on MissingPluginException {
+      return false;
+    }
+  }
+
+  static Future<bool> stopSpeaking() async {
+    try {
+      final result = await _channel.invokeMethod<bool>('stopSpeaking');
+      return result ?? false;
+    } on PlatformException {
+      return false;
+    } on MissingPluginException {
+      return false;
+    }
+  }
+
+  /// Deferred until the visible, user-started recording milestone.
   static Future<bool> startBackgroundService() async {
     try {
       final result = await _channel.invokeMethod<bool>(
@@ -19,7 +43,7 @@ class NimmyNativeBridge {
     }
   }
 
-  /// Stop native Android foreground daemon service
+  /// Deferred until the visible, user-started recording milestone.
   static Future<bool> stopBackgroundService() async {
     try {
       final result = await _channel.invokeMethod<bool>('stopBackgroundService');
@@ -31,7 +55,7 @@ class NimmyNativeBridge {
     }
   }
 
-  /// Check if the native foreground service is actively running
+  /// Check the deferred recording service status.
   static Future<bool> isServiceRunning() async {
     try {
       final result = await _channel.invokeMethod<bool>('isServiceRunning');
@@ -43,13 +67,13 @@ class NimmyNativeBridge {
     }
   }
 
-  /// Start hardware microphone capture via AudioRecord daemon
+  /// Deferred until visible foreground recording is implemented.
   static Future<Map<String, dynamic>> startVoiceRecording() async {
     try {
       final result = await _channel.invokeMapMethod<String, dynamic>(
         'startVoiceRecording',
       );
-      return result ?? {'status': 'error', 'filePath': null};
+      return result ?? {'status': 'unavailable', 'filePath': null};
     } on PlatformException catch (e) {
       return {'status': 'error', 'message': e.message};
     } catch (e) {
@@ -57,14 +81,14 @@ class NimmyNativeBridge {
     }
   }
 
-  /// Stop hardware microphone capture and retrieve recorded PCM file metadata
+  /// Deferred until visible foreground recording is implemented.
   static Future<Map<String, dynamic>> stopVoiceRecording() async {
     try {
       final result = await _channel.invokeMapMethod<String, dynamic>(
         'stopVoiceRecording',
       );
       return result ??
-          {'status': 'stopped', 'filePath': null, 'fileSizeBytes': 0};
+          {'status': 'unavailable', 'filePath': null, 'fileSizeBytes': 0};
     } on PlatformException catch (e) {
       return {'status': 'error', 'message': e.message};
     } catch (e) {
@@ -72,7 +96,7 @@ class NimmyNativeBridge {
     }
   }
 
-  /// Schedule exact hardware alarm using AlarmManager
+  /// Schedule an inexact, user-confirmed Android alarm.
   static Future<Map<String, dynamic>> scheduleAlarm({
     required String title,
     required String body,
@@ -95,33 +119,31 @@ class NimmyNativeBridge {
     }
   }
 
-  /// Retrieve device hardware telemetry
+  static Future<bool> cancelAlarm(int id) async {
+    try {
+      final result = await _channel.invokeMethod<bool>('cancelAlarm', {
+        'id': id,
+      });
+      return result ?? false;
+    } on PlatformException {
+      return false;
+    } on MissingPluginException {
+      return false;
+    }
+  }
+
+  /// Retrieve device hardware telemetry when the Android bridge is available.
   static Future<Map<String, dynamic>> getDeviceInfo() async {
     try {
       final result = await _channel.invokeMapMethod<String, dynamic>(
         'getDeviceInfo',
       );
       return result ??
-          {
-            'manufacturer': 'LocalHost',
-            'model': 'Simulation',
-            'batteryLevel': 100,
-            'isBackgroundServiceRunning': false,
-          };
+          {'available': false, 'error': 'NATIVE_BRIDGE_UNAVAILABLE'};
     } on PlatformException {
-      return {
-        'manufacturer': 'LocalHost',
-        'model': 'Simulation',
-        'batteryLevel': 100,
-        'isBackgroundServiceRunning': false,
-      };
+      return {'available': false, 'error': 'NATIVE_BRIDGE_UNAVAILABLE'};
     } catch (_) {
-      return {
-        'manufacturer': 'LocalHost',
-        'model': 'Simulation',
-        'batteryLevel': 100,
-        'isBackgroundServiceRunning': false,
-      };
+      return {'available': false, 'error': 'NATIVE_BRIDGE_UNAVAILABLE'};
     }
   }
 

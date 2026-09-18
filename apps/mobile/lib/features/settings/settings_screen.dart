@@ -98,8 +98,8 @@ class SettingsScreen extends StatelessWidget {
                 title: 'Cloud sync',
                 subtitle: controller.isLocalOnly
                     ? 'Not configured • data stays on this device'
-                    : 'Connected',
-                badge: controller.isLocalOnly ? 'LOCAL ONLY' : 'SYNCED',
+                    : 'Authenticated sync link is configured',
+                badge: controller.isLocalOnly ? 'LOCAL ONLY' : 'CLOUD LINKED',
               ),
               _SettingsTile(
                 icon: Icons.history_rounded,

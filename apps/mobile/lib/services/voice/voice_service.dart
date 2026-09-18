@@ -1,16 +1,14 @@
-import 'package:flutter_tts/flutter_tts.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart';
+
+import '../../core/native/nimmy_bridge.dart';
 
 typedef TranscriptCallback = void Function(String text, bool isFinal);
 
 class VoiceService {
-  VoiceService({SpeechToText? speech, FlutterTts? tts})
-    : _speech = speech ?? SpeechToText(),
-      _tts = tts ?? FlutterTts();
+  VoiceService({SpeechToText? speech}) : _speech = speech ?? SpeechToText();
 
   final SpeechToText _speech;
-  final FlutterTts _tts;
   bool _initialized = false;
 
   bool get isListening => _speech.isListening;
@@ -18,8 +16,6 @@ class VoiceService {
   Future<bool> initialize() async {
     if (_initialized) return true;
     _initialized = await _speech.initialize();
-    await _tts.setLanguage('en-IN');
-    await _tts.setSpeechRate(0.48);
     return _initialized;
   }
 
@@ -45,9 +41,10 @@ class VoiceService {
   Future<void> cancelListening() => _speech.cancel();
 
   Future<void> speak(String text) async {
-    await _tts.stop();
-    await _tts.speak(text);
+    await NimmyNativeBridge.speak(text);
   }
 
-  Future<void> stopSpeaking() => _tts.stop();
+  Future<void> stopSpeaking() async {
+    await NimmyNativeBridge.stopSpeaking();
+  }
 }

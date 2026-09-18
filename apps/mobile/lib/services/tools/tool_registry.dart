@@ -34,6 +34,10 @@ class ToolRegistry {
     return _confirmationPolicy.requiresConfirmation(proposal.toolName);
   }
 
+  Future<void> cancelReminderNotification(String reminderId) {
+    return _reminderScheduler.cancel(reminderId);
+  }
+
   Future<void> audit(
     ToolProposal proposal,
     AuditStatus status, {
@@ -70,7 +74,7 @@ class ToolRegistry {
     }
 
     try {
-      return switch (proposal.input) {
+      return await switch (proposal.input) {
         CreateReminderInput input => _createReminder(proposal, input),
         SaveMemoryInput input => _saveMemory(proposal, input),
       };

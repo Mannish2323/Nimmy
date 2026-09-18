@@ -199,6 +199,7 @@ class NimmyController extends ChangeNotifier {
   }
 
   Future<void> deleteReminder(NimmyReminder reminder) async {
+    await _toolRegistry.cancelReminderNotification(reminder.id);
     await _repository.deleteReminder(reminder.id);
     await _appendDirectAudit(
       actionType: 'deleteReminder',

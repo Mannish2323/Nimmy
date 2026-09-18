@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../../core/state/nimmy_controller.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/memory.dart';
+import '../../models/reminder.dart';
 import '../../widgets/empty_state.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/status_badge.dart';

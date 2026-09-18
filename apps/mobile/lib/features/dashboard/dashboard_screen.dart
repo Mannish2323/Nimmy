@@ -168,7 +168,7 @@ class _OrbHero extends StatelessWidget {
                 icon: Icons.circle,
               ),
               StatusBadge(
-                label: controller.isLocalOnly ? 'LOCAL MODE' : 'SYNCED',
+                label: controller.isLocalOnly ? 'LOCAL MODE' : 'CLOUD LINKED',
                 color: controller.isLocalOnly
                     ? NimmyColors.amber
                     : NimmyColors.cyan,

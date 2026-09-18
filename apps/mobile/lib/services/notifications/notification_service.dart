@@ -1,8 +1,4 @@
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:flutter_timezone/flutter_timezone.dart';
-import 'package:timezone/data/latest.dart' as tz_data;
-import 'package:timezone/timezone.dart' as tz;
-
+import '../../core/native/nimmy_bridge.dart';
 import '../../models/reminder.dart';
 
 abstract interface class ReminderScheduler {
@@ -15,67 +11,35 @@ abstract interface class ReminderScheduler {
   Future<void> cancel(String reminderId);
 }
 
-class LocalNotificationService implements ReminderScheduler {
-  LocalNotificationService({FlutterLocalNotificationsPlugin? plugin})
-    : _plugin = plugin ?? FlutterLocalNotificationsPlugin();
+class NativeReminderScheduler implements ReminderScheduler {
+  NativeReminderScheduler({this.configuredTimezone = 'UTC'});
 
-  final FlutterLocalNotificationsPlugin _plugin;
-  String _timezone = 'UTC';
+  final String configuredTimezone;
 
   @override
-  String get timezone => _timezone;
+  String get timezone => configuredTimezone;
 
   @override
   Future<void> initialize() async {
-    tz_data.initializeTimeZones();
-    try {
-      final timezoneInfo = await FlutterTimezone.getLocalTimezone();
-      _timezone = timezoneInfo.identifier;
-      tz.setLocalLocation(tz.getLocation(_timezone));
-    } catch (_) {
-      _timezone = 'UTC';
-      tz.setLocalLocation(tz.UTC);
-    }
-
-    const settings = InitializationSettings(
-      android: AndroidInitializationSettings('@mipmap/ic_launcher'),
-    );
-    await _plugin.initialize(settings: settings);
+    // Android creates the notification channel lazily when the first alarm
+    // fires. This keeps permission prompts tied to an actual user action.
   }
 
   @override
   Future<bool> schedule(NimmyReminder reminder) async {
-    final scheduled = tz.TZDateTime.from(reminder.scheduledAt, tz.local);
-    if (!scheduled.isAfter(tz.TZDateTime.now(tz.local))) return false;
-
-    const details = NotificationDetails(
-      android: AndroidNotificationDetails(
-        'nimmy_reminders',
-        'Nimmy reminders',
-        channelDescription: 'Reminders explicitly created with Nimmy',
-        importance: Importance.high,
-        priority: Priority.high,
-      ),
-    );
-
-    await _plugin.zonedSchedule(
-      id: _notificationId(reminder.id),
+    if (!reminder.scheduledAt.isAfter(DateTime.now().toUtc())) return false;
+    final result = await NimmyNativeBridge.scheduleAlarm(
       title: 'Nimmy reminder',
       body: reminder.title,
-      scheduledDate: scheduled,
-      notificationDetails: details,
-      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-      payload: reminder.id,
-      matchDateTimeComponents: reminder.recurrence == null
-          ? null
-          : DateTimeComponents.dayOfWeekAndTime,
+      scheduledTime: reminder.scheduledAt,
+      id: _notificationId(reminder.id),
     );
-    return true;
+    return result['scheduled'] == true;
   }
 
   @override
-  Future<void> cancel(String reminderId) {
-    return _plugin.cancel(id: _notificationId(reminderId));
+  Future<void> cancel(String reminderId) async {
+    await NimmyNativeBridge.cancelAlarm(_notificationId(reminderId));
   }
 
   int _notificationId(String id) => id.hashCode & 0x7fffffff;
