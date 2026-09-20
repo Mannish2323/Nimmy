@@ -106,51 +106,14 @@ class LLMEngine:
         # 1. Task Creation Intent
         if any(w in lower for w in ["task", "todo", "action item", "remind me to"]):
             intent = "task_creation"
-            title = re.sub(
-                r"^(please\s+)?(add\s+a?\s*task|create\s+a?\s*task|remind\s+me\s+to|add\s+todo)\s*:?\s*",
-                "",
-                text,
-                flags=re.IGNORECASE,
-            ).strip()
-            if not title:
-                title = text
-
-            priority = "medium"
-            if any(p in lower for p in ["urgent", "asap", "critical"]):
-                priority = "urgent"
-            elif any(p in lower for p in ["high priority", "important"]):
-                priority = "high"
-
-            tools.append(
-                ToolCall(
-                    name="create_task",
-                    arguments={
-                        "title": title,
-                        "priority": priority,
-                        "due_date": "Today, 5:00 PM" if "today" in lower else "Tomorrow",
-                    },
-                )
-            )
+            # Task creation is intentionally not proposed until its typed
+            # executor, authorization, audit, and persistence path exist.
 
         # 2. Calendar Event Intent
         elif any(w in lower for w in ["meeting", "schedule", "calendar", "call with"]):
             intent = "calendar_scheduling"
-            title = re.sub(
-                r"^(please\s+)?(schedule\s+a?\s*meeting|schedule|add\s+to\s+calendar)\s*:?\s*",
-                "",
-                text,
-                flags=re.IGNORECASE,
-            ).strip()
-            tools.append(
-                ToolCall(
-                    name="create_calendar_event",
-                    arguments={
-                        "title": title or "Scheduled Discussion",
-                        "start_time": "Tomorrow at 10:00 AM",
-                        "duration_minutes": 30,
-                    },
-                )
-            )
+            # Calendar actions remain unavailable until OAuth, permissions,
+            # conflict handling, and a controlled executor are implemented.
 
         # 3. Memory Storage Intent
         elif any(w in lower for w in ["remember", "store memory", "save memory", "i prefer"]):
@@ -163,9 +126,10 @@ class LLMEngine:
             ).strip()
             tools.append(
                 ToolCall(
-                    name="store_memory",
+                    name="save_memory",
                     arguments={
-                        "category": "Preference" if "prefer" in lower else "Fact",
+                        "category": "preference" if "prefer" in lower else "other",
+                        "importance": "normal",
                         "content": content or text,
                     },
                 )
@@ -202,25 +166,21 @@ class LLMEngine:
         tools, intent = self._extract_tools_from_text(last_message)
 
         if intent == "task_creation":
-            task_arg = tools[0].arguments
             reply = (
-                f"I have created a new priority task: \"{task_arg['title']}\" (Priority: {task_arg['priority'].upper()}). "
-                f"It has been synchronized to your task board across Web and Mobile."
+                "I understood that as a task request, but task creation is not "
+                "available yet. Nothing was changed."
             )
         elif intent == "calendar_scheduling":
-            event_arg = tools[0].arguments
+            # Never claim a calendar write or notification without an executor.
             reply = (
-                f"Scheduled \"{event_arg['title']}\" for {event_arg['start_time']} ({event_arg['duration_minutes']} min). "
-                f"Notifications have been armed for your connected Android devices."
+                "I understood that as a calendar request, but calendar actions "
+                "are not connected yet. Nothing was changed."
             )
         elif intent == "memory_storage":
             mem_arg = tools[0].arguments
-            # Directly persist to memory vault
-            from ..schemas import MemoryCreate
-            memory_vault.add_memory(MemoryCreate(category=mem_arg["category"], content=mem_arg["content"]))
             reply = (
-                f"Stored in persistent semantic memory under [{mem_arg['category']}]. "
-                f"I will leverage this context in subsequent autonomous actions."
+                "I prepared a memory proposal. The application must ask for "
+                "confirmation before saving it."
             )
         elif intent == "memory_recall":
             mem_arg = tools[0].arguments

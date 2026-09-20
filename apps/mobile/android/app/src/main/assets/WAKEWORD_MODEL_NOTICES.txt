@@ -1,0 +1,17 @@
+NIMMY WAKE-WORD MODEL NOTICES
+
+melspectrogram.onnx
+Copyright 2022-2024 David Scripka, openWakeWord project.
+Licensed under the Apache License, Version 2.0.
+SHA-256: BA2B0E0F8B7B875369A2C89CB13360FF53BAC436F2895CCED9F479FA65EB176F
+
+embedding_model.onnx
+Original TensorFlow model copyright Google LLC.
+ONNX conversion copyright 2022-2024 David Scripka, openWakeWord project.
+Licensed under the Apache License, Version 2.0.
+SHA-256: 70D164290C1D095D1D4EE149BC5E00543250A7316B59F31D056CFF7BD3075C1F
+
+The Apache License 2.0 is included beside this file as
+WAKEWORD_APACHE_2_0_LICENSE.txt.
+
+No application-specific Nimmy classifier is included at this time.

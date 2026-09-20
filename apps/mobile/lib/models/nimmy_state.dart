@@ -1,6 +1,8 @@
 enum NimmyOrbState {
   idle,
+  wakeDetected,
   listening,
+  transcribing,
   understanding,
   thinking,
   confirming,
@@ -8,5 +10,7 @@ enum NimmyOrbState {
   success,
   speaking,
   error,
+  cancelled,
   recording,
+  offline,
 }

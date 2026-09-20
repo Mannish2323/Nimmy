@@ -1,38 +1,62 @@
 package ai.nimmy.nimmy
 
+import android.Manifest
+import android.app.AlarmManager
+import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.BatteryManager
 import android.os.Build
-import android.app.AlarmManager
-import android.app.PendingIntent
-import android.content.Intent
+import android.os.Handler
+import android.os.Looper
 import android.speech.tts.TextToSpeech
-import java.util.Locale
+import android.speech.tts.UtteranceProgressListener
 import androidx.core.content.ContextCompat
 import io.flutter.plugin.common.BinaryMessenger
+import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
+import java.util.Locale
+import java.util.UUID
 
 /**
- * Small, allow-listed Flutter-to-Android bridge.
- *
- * Recording and autonomous background-service methods deliberately return an
- * explicit unavailable error in the MVP. They must not be enabled until the
- * user-started, visible foreground-recording milestone is implemented.
+ * Allow-listed Flutter-to-Android bridge. Wake detection can control only its
+ * microphone foreground service and emit events; it receives no database,
+ * network, repository, or tool-execution authority.
  */
-class NimmyBridgeChannel(private val context: Context) : MethodChannel.MethodCallHandler {
+class NimmyBridgeChannel(private val context: Context) :
+    MethodChannel.MethodCallHandler,
+    EventChannel.StreamHandler {
 
+    private val mainHandler = Handler(Looper.getMainLooper())
+    private var eventSink: EventChannel.EventSink? = null
     private var textToSpeech: TextToSpeech? = null
+    private var pendingSpeechResult: MethodChannel.Result? = null
+    private var pendingSpeechId: String? = null
+    private val wakeEventListener: (Map<String, Any?>) -> Unit = { event ->
+        mainHandler.post { eventSink?.success(event) }
+    }
 
     companion object {
         const val CHANNEL_NAME = "ai.nimmy.nimmy/bridge"
+        const val EVENT_CHANNEL_NAME = "ai.nimmy.nimmy/wake_events"
 
-        fun register(messenger: BinaryMessenger, context: Context): MethodChannel {
-            return MethodChannel(messenger, CHANNEL_NAME).also {
-                it.setMethodCallHandler(NimmyBridgeChannel(context))
-            }
+        fun register(messenger: BinaryMessenger, context: Context) {
+            val handler = NimmyBridgeChannel(context.applicationContext)
+            MethodChannel(messenger, CHANNEL_NAME).setMethodCallHandler(handler)
+            EventChannel(messenger, EVENT_CHANNEL_NAME).setStreamHandler(handler)
         }
+    }
+
+    override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
+        eventSink = events
+        WakeWordRuntime.subscribe(wakeEventListener)
+    }
+
+    override fun onCancel(arguments: Any?) {
+        WakeWordRuntime.unsubscribe(wakeEventListener)
+        eventSink = null
     }
 
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
@@ -44,18 +68,161 @@ class NimmyBridgeChannel(private val context: Context) : MethodChannel.MethodCal
             "stopSpeaking" -> stopSpeaking(result)
             "scheduleAlarm" -> scheduleAlarm(call, result)
             "cancelAlarm" -> cancelAlarm(call, result)
+            "getWakeWordCapabilities", "getWakeWordStatus" ->
+                result.success(wakeWordCapabilities())
+            "startWakeWordDetection" -> startWakeWordDetection(call, result)
+            "stopWakeWordDetection" -> stopWakeWordDetection(result)
+            "pauseWakeWordDetection" -> pauseWakeWordDetection(call, result)
+            "resumeWakeWordDetection" -> resumeWakeWordDetection(result)
+            "isServiceRunning" -> result.success(WakeWordRuntime.serviceRunning)
             "startBackgroundService",
             "stopBackgroundService",
-            "isServiceRunning",
             "startVoiceRecording",
             "stopVoiceRecording" -> result.error(
                 "NOT_AVAILABLE_IN_MVP",
-                "This Android capability is not available in the current Nimmy build.",
+                "Background recording is not available. Wake detection uses a separate visible service.",
                 null
             )
             else -> result.notImplemented()
         }
     }
+
+    private fun wakeWordCapabilities(): Map<String, Any?> {
+        val missingAssets = WakeWordAssets.missing(context)
+        return mapOf(
+            "supported" to true,
+            "local" to true,
+            "serviceRunning" to WakeWordRuntime.serviceRunning,
+            "status" to WakeWordRuntime.status,
+            "microphonePermission" to hasPermission(Manifest.permission.RECORD_AUDIO),
+            "notificationPermission" to hasNotificationPermission(),
+            "modelInstalled" to !missingAssets.contains(WakeWordAssets.NIMMY_MODEL),
+            "featureModelsInstalled" to
+                !missingAssets.contains(WakeWordAssets.MEL_MODEL) &&
+                !missingAssets.contains(WakeWordAssets.EMBEDDING_MODEL),
+            "missingAssets" to missingAssets,
+            "phrases" to listOf("Hey Nimmy", "Nimmy"),
+            "requiresVisibleNotification" to true,
+            "canAutoStartAfterBoot" to false,
+            "minimumAndroidSdk" to 23
+        )
+    }
+
+    private fun startWakeWordDetection(call: MethodCall, result: MethodChannel.Result) {
+        val capabilities = wakeWordCapabilities()
+        val missing = capabilities["missingAssets"] as List<*>
+        if (missing.isNotEmpty()) {
+            result.success(
+                operationFailure(
+                    "WAKE_ENGINE_UNAVAILABLE",
+                    "The trained Nimmy wake-word model is not installed.",
+                    "Install wakeword/nimmy.onnx and retry.",
+                    extras = mapOf("missingAssets" to missing)
+                )
+            )
+            return
+        }
+        if (!hasPermission(Manifest.permission.RECORD_AUDIO)) {
+            result.success(
+                operationFailure(
+                    "MIC_PERMISSION_DENIED",
+                    "Microphone permission is required for wake detection.",
+                    "Enable microphone access in Nimmy permissions."
+                )
+            )
+            return
+        }
+        if (!hasNotificationPermission()) {
+            result.success(
+                operationFailure(
+                    "NOTIFICATION_PERMISSION_DENIED",
+                    "A visible notification is required while the microphone is active.",
+                    "Enable Nimmy notifications and retry."
+                )
+            )
+            return
+        }
+
+        val threshold = (call.argument<Number>("threshold")?.toFloat() ?: 0.50f)
+            .coerceIn(0.05f, 0.95f)
+        val serviceIntent = Intent(context, NimmyForegroundService::class.java).apply {
+            action = NimmyForegroundService.ACTION_START
+            putExtra(NimmyForegroundService.EXTRA_THRESHOLD, threshold)
+        }
+        try {
+            ContextCompat.startForegroundService(context, serviceIntent)
+            result.success(
+                mapOf(
+                    "success" to true,
+                    "status" to WakeWordRuntime.STATUS_STARTING,
+                    "local" to true
+                )
+            )
+        } catch (error: Throwable) {
+            WakeWordRuntime.publishError(
+                "BACKGROUND_RESTRICTION",
+                "Android prevented the microphone service from starting.",
+                "Open Nimmy and enable wake detection while the app is visible."
+            )
+            result.success(
+                operationFailure(
+                    "BACKGROUND_RESTRICTION",
+                    "Android prevented the microphone service from starting.",
+                    "Open Nimmy and retry while the app is visible."
+                )
+            )
+        }
+    }
+
+    private fun stopWakeWordDetection(result: MethodChannel.Result) {
+        val stopped = context.stopService(Intent(context, NimmyForegroundService::class.java))
+        WakeWordRuntime.updateStatus(
+            WakeWordRuntime.STATUS_STOPPED,
+            running = false,
+            reason = "user_stopped"
+        )
+        result.success(mapOf("success" to true, "wasRunning" to stopped, "status" to "stopped"))
+    }
+
+    private fun pauseWakeWordDetection(call: MethodCall, result: MethodChannel.Result) {
+        if (!WakeWordRuntime.serviceRunning) {
+            result.success(operationFailure("SERVICE_NOT_RUNNING", "Wake detection is not active.", "Enable wake detection first."))
+            return
+        }
+        val intent = Intent(context, NimmyForegroundService::class.java).apply {
+            action = NimmyForegroundService.ACTION_PAUSE
+            putExtra(
+                NimmyForegroundService.EXTRA_REASON,
+                call.argument<String>("reason") ?: "voice_pipeline"
+            )
+        }
+        context.startService(intent)
+        result.success(mapOf("success" to true, "status" to "pausing"))
+    }
+
+    private fun resumeWakeWordDetection(result: MethodChannel.Result) {
+        if (!WakeWordRuntime.serviceRunning) {
+            result.success(operationFailure("SERVICE_NOT_RUNNING", "Wake detection is not active.", "Enable wake detection first."))
+            return
+        }
+        val intent = Intent(context, NimmyForegroundService::class.java).apply {
+            action = NimmyForegroundService.ACTION_RESUME
+        }
+        context.startService(intent)
+        result.success(mapOf("success" to true, "status" to "resuming"))
+    }
+
+    private fun operationFailure(
+        code: String,
+        message: String,
+        recovery: String,
+        extras: Map<String, Any?> = emptyMap()
+    ): Map<String, Any?> = mapOf(
+        "success" to false,
+        "errorCode" to code,
+        "message" to message,
+        "recovery" to recovery
+    ) + extras
 
     private fun speak(call: MethodCall, result: MethodChannel.Result) {
         val text = call.argument<String>("text")?.trim()
@@ -85,11 +252,8 @@ class NimmyBridgeChannel(private val context: Context) : MethodChannel.MethodCal
         }
     }
 
-    private fun speakWith(
-        engine: TextToSpeech,
-        text: String,
-        result: MethodChannel.Result
-    ) {
+    private fun speakWith(engine: TextToSpeech, text: String, result: MethodChannel.Result) {
+        finishPendingSpeech(success = false)
         engine.stop()
         val languageStatus = engine.setLanguage(Locale("en", "IN"))
         if (languageStatus == TextToSpeech.LANG_MISSING_DATA ||
@@ -98,17 +262,49 @@ class NimmyBridgeChannel(private val context: Context) : MethodChannel.MethodCal
             result.error("TTS_LANGUAGE_UNAVAILABLE", "The configured speech language is unavailable.", null)
             return
         }
-        engine.setSpeechRate(0.48f)
-        val speakStatus = engine.speak(text, TextToSpeech.QUEUE_FLUSH, null, "nimmy-response")
+
+        val utteranceId = "nimmy-${UUID.randomUUID()}"
+        pendingSpeechResult = result
+        pendingSpeechId = utteranceId
+        engine.setSpeechRate(0.92f)
+        engine.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
+            override fun onStart(id: String?) = Unit
+
+            override fun onDone(id: String?) {
+                if (id == utteranceId) finishPendingSpeech(success = true)
+            }
+
+            @Deprecated("Deprecated in Java")
+            override fun onError(id: String?) {
+                if (id == utteranceId) finishPendingSpeech(success = false, errorCode = "TTS_FAILED")
+            }
+
+            override fun onError(id: String?, errorCode: Int) {
+                if (id == utteranceId) finishPendingSpeech(success = false, errorCode = "TTS_FAILED")
+            }
+        })
+        val speakStatus = engine.speak(text, TextToSpeech.QUEUE_FLUSH, null, utteranceId)
         if (speakStatus == TextToSpeech.ERROR) {
-            result.error("TTS_FAILED", "Text-to-speech could not start.", null)
-        } else {
-            result.success(true)
+            finishPendingSpeech(success = false, errorCode = "TTS_FAILED")
+        }
+    }
+
+    private fun finishPendingSpeech(success: Boolean, errorCode: String? = null) {
+        val pending = pendingSpeechResult ?: return
+        pendingSpeechResult = null
+        pendingSpeechId = null
+        mainHandler.post {
+            if (errorCode == null) {
+                pending.success(success)
+            } else {
+                pending.error(errorCode, "Text-to-speech did not complete.", null)
+            }
         }
     }
 
     private fun stopSpeaking(result: MethodChannel.Result) {
         textToSpeech?.stop()
+        finishPendingSpeech(success = false)
         result.success(true)
     }
 
@@ -169,10 +365,9 @@ class NimmyBridgeChannel(private val context: Context) : MethodChannel.MethodCal
                 "model" to Build.MODEL,
                 "osVersion" to Build.VERSION.RELEASE,
                 "sdkInt" to Build.VERSION.SDK_INT,
-                "batteryLevel" to (battery?.getIntProperty(
-                    BatteryManager.BATTERY_PROPERTY_CAPACITY
-                ) ?: -1),
-                "backgroundServiceAvailable" to false
+                "batteryLevel" to (battery?.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY) ?: -1),
+                "backgroundServiceAvailable" to false,
+                "wakeWordForegroundServiceSupported" to (Build.VERSION.SDK_INT >= 23)
             )
         )
     }
@@ -188,21 +383,24 @@ class NimmyBridgeChannel(private val context: Context) : MethodChannel.MethodCal
             result.error("APP_NOT_FOUND", "The requested app is not installed.", null)
             return
         }
-        launchIntent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+        launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         context.startActivity(launchIntent)
         result.success(true)
     }
 
     private fun checkPermissions(result: MethodChannel.Result) {
-        val microphone = ContextCompat.checkSelfPermission(
-            context,
-            android.Manifest.permission.RECORD_AUDIO
-        ) == PackageManager.PERMISSION_GRANTED
-        val notifications = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
-            ContextCompat.checkSelfPermission(
-                context,
-                android.Manifest.permission.POST_NOTIFICATIONS
-            ) == PackageManager.PERMISSION_GRANTED
-        result.success(mapOf("recordAudio" to microphone, "notifications" to notifications))
+        result.success(
+            mapOf(
+                "recordAudio" to hasPermission(Manifest.permission.RECORD_AUDIO),
+                "notifications" to hasNotificationPermission()
+            )
+        )
     }
+
+    private fun hasPermission(permission: String): Boolean =
+        ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
+
+    private fun hasNotificationPermission(): Boolean =
+        Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+            hasPermission(Manifest.permission.POST_NOTIFICATIONS)
 }

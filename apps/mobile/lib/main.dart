@@ -8,6 +8,7 @@ import 'core/state/nimmy_controller.dart';
 import 'core/theme/app_theme.dart';
 import 'services/permissions/permission_service.dart';
 import 'services/voice/voice_service.dart';
+import 'services/voice/wake_word_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -42,6 +43,9 @@ class NimmyApp extends StatelessWidget {
         ),
         Provider<VoiceService>.value(value: bootstrap.voiceService),
         Provider<PermissionService>.value(value: bootstrap.permissionService),
+        ChangeNotifierProvider<WakeWordService>.value(
+          value: bootstrap.wakeWordService,
+        ),
       ],
       child: MaterialApp.router(
         title: 'Nimmy',

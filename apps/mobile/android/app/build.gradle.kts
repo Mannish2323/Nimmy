@@ -42,6 +42,9 @@ android {
 
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+    // Local wake-word inference. The classifier is an app-owned ONNX asset;
+    // this dependency never receives network or database authority.
+    implementation("xyz.rementia:openwakeword:0.1.5")
 }
 
 kotlin {

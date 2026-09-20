@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/logging/nimmy_logger.dart';
 import '../../core/theme/app_theme.dart';
 
 class AppShell extends StatelessWidget {
@@ -42,6 +44,7 @@ class AppShell extends StatelessWidget {
       floatingActionButton: Semantics(
         button: true,
         label: 'Talk to Nimmy',
+        hint: 'Opens voice center',
         child: Container(
           width: 64,
           height: 64,
@@ -57,14 +60,24 @@ class AppShell extends StatelessWidget {
             ],
           ),
           child: IconButton(
-            onPressed: () => context.push('/voice'),
+            key: const Key('shell_orb_button'),
+            onPressed: () {
+              HapticFeedback.mediumImpact();
+              NimmyLogger.info('Voice action triggered from shell orb button', category: LogCategory.ui);
+              context.push('/voice');
+            },
             icon: const Icon(Icons.mic_rounded, color: Colors.white, size: 28),
           ),
         ),
       ),
       bottomNavigationBar: _NimmyBottomBar(
         selectedIndex: selected,
-        onSelect: (index) => context.go(_destinations[index].$1),
+        onSelect: (index) {
+          HapticFeedback.selectionClick();
+          final target = _destinations[index].$1;
+          NimmyLogger.debug('Navigating to destination: $target', category: LogCategory.ui);
+          context.go(target);
+        },
       ),
     );
   }
@@ -101,6 +114,7 @@ class _NimmyBottomBar extends StatelessWidget {
                     selected: active,
                     label: item.$4,
                     child: Column(
+                      mainAxisSize: MainAxisSize.min,
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         AnimatedSwitcher(

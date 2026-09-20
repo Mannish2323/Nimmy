@@ -5,6 +5,8 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.VIBRATE" />
 
@@ -35,6 +37,19 @@
         <receiver
             android:name=".NimmyAlarmReceiver"
             android:exported="false" />
+
+        <!--
+          User-enabled, visible, local wake-word detection. Android 14+
+          requires the microphone foreground-service type and permission.
+          The service is deliberately not boot-started: modern Android does
+          not allow a microphone FGS to be created silently from boot/background.
+        -->
+        <service
+            android:name=".NimmyForegroundService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="microphone"
+            android:stopWithTask="false" />
 
         <meta-data
             android:name="flutterEmbedding"

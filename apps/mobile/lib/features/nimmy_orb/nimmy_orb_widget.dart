@@ -98,20 +98,26 @@ class _NimmyOrbPainter extends CustomPainter {
   final double audioLevel;
 
   Color get color => switch (state) {
+    NimmyOrbState.wakeDetected => NimmyColors.cyan,
     NimmyOrbState.listening => NimmyColors.cyan,
-    NimmyOrbState.understanding || NimmyOrbState.thinking => NimmyColors.indigo,
+    NimmyOrbState.transcribing ||
+    NimmyOrbState.understanding ||
+    NimmyOrbState.thinking => NimmyColors.indigo,
     NimmyOrbState.confirming => NimmyColors.amber,
     NimmyOrbState.executing => NimmyColors.purpleLight,
     NimmyOrbState.success => NimmyColors.green,
     NimmyOrbState.speaking => NimmyColors.purpleLight,
     NimmyOrbState.error => NimmyColors.pink,
+    NimmyOrbState.cancelled => NimmyColors.textMuted,
     NimmyOrbState.recording => NimmyColors.red,
+    NimmyOrbState.offline => NimmyColors.textMuted,
     NimmyOrbState.idle => NimmyColors.purple,
   };
 
   double get speed => switch (state) {
     NimmyOrbState.thinking || NimmyOrbState.executing => 3.1,
-    NimmyOrbState.understanding => 2.1,
+    NimmyOrbState.wakeDetected => 2.7,
+    NimmyOrbState.transcribing || NimmyOrbState.understanding => 2.1,
     NimmyOrbState.listening || NimmyOrbState.speaking => 1.65,
     NimmyOrbState.error => 2.4,
     _ => 1,
@@ -124,7 +130,10 @@ class _NimmyOrbPainter extends CustomPainter {
     final coreRadius = unit * (0.235 + breath * 0.012);
     final activeLevel = switch (state) {
       NimmyOrbState.listening || NimmyOrbState.speaking => audioLevel,
-      NimmyOrbState.thinking || NimmyOrbState.executing => 0.65,
+      NimmyOrbState.wakeDetected ||
+      NimmyOrbState.transcribing ||
+      NimmyOrbState.thinking ||
+      NimmyOrbState.executing => 0.65,
       _ => 0.25,
     };
 

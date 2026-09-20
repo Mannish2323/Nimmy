@@ -9,6 +9,7 @@ import '../../models/tool_action.dart';
 import '../../services/ai/intent_parser.dart';
 import '../../services/storage/nimmy_repository.dart';
 import '../../services/tools/tool_registry.dart';
+import '../logging/nimmy_logger.dart';
 
 class NimmyController extends ChangeNotifier {
   NimmyController({
@@ -78,48 +79,79 @@ class NimmyController extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> submitCommand(
+  Future<IntentParseResult> submitCommand(
     String text, {
     InteractionSource source = InteractionSource.text,
+    Map<String, dynamic> auditMetadata = const {},
   }) async {
-    if (_isBusy) return;
-    _warning = null;
-    _pendingProposal = null;
-    _orbState = NimmyOrbState.understanding;
-    _assistantMessage = 'Understanding your request…';
-    notifyListeners();
-
-    final result = _intentParser.parse(text, source: source);
-    if (!result.hasProposal) {
-      _orbState = NimmyOrbState.error;
-      _assistantMessage =
-          result.clarification ??
-          result.error ??
-          'I could not understand that request.';
-      notifyListeners();
-      return;
-    }
-
-    final proposal = result.proposal!;
-    try {
-      await _toolRegistry.audit(
-        proposal,
-        AuditStatus.proposed,
-        metadata: {'input': proposal.input.toJson()},
+    if (_isBusy) {
+      return const IntentParseResult.error(
+        'Nimmy is already handling another action.',
       );
-      _pendingProposal = proposal;
-      _orbState = NimmyOrbState.confirming;
-      _assistantMessage = 'Here’s what I understood. Please confirm it.';
-      await refresh();
-    } catch (_) {
-      _orbState = NimmyOrbState.error;
-      _assistantMessage =
-          'I understood you, but I could not prepare the action. Nothing was changed.';
+    }
+    _isBusy = true;
+    try {
+      NimmyLogger.info(
+        'Command submitted',
+        category: LogCategory.voice,
+        context: {'source': source.name, 'characterCount': text.length},
+      );
+      _warning = null;
+      _pendingProposal = null;
+      _orbState = NimmyOrbState.understanding;
+      _assistantMessage = 'Understanding your request…';
       notifyListeners();
+
+      final result = _intentParser.parse(text, source: source);
+      if (!result.hasProposal) {
+        NimmyLogger.warn('Intent parsing failed to produce proposal', category: LogCategory.ai, context: {
+          'error': result.error,
+          'clarification': result.clarification,
+        });
+        _orbState = NimmyOrbState.error;
+        _assistantMessage =
+            result.clarification ??
+            result.error ??
+            'I could not understand that request.';
+        notifyListeners();
+        return result;
+      }
+
+      final proposal = result.proposal!;
+      NimmyLogger.info(
+        'Proposal created: ${proposal.toolName}',
+        category: LogCategory.tool,
+        context: {'tool': proposal.toolName},
+      );
+      try {
+        await _toolRegistry.audit(
+          proposal,
+          AuditStatus.proposed,
+          metadata: {...auditMetadata, 'input': proposal.input.toJson()},
+        );
+        _pendingProposal = proposal;
+        _orbState = NimmyOrbState.confirming;
+        _assistantMessage = 'Here’s what I understood. Please confirm it.';
+        await refresh();
+        return result;
+      } catch (e, st) {
+        NimmyLogger.error('Failed to audit proposal', category: LogCategory.tool, error: e, stackTrace: st);
+        _orbState = NimmyOrbState.error;
+        _assistantMessage =
+            'I understood you, but I could not prepare the action. Nothing was changed.';
+        notifyListeners();
+        return const IntentParseResult.error(
+          'I understood you, but I could not prepare the action. Nothing was changed.',
+        );
+      }
+    } finally {
+      _isBusy = false;
     }
   }
 
-  Future<ToolExecutionResult?> confirmPending() async {
+  Future<ToolExecutionResult?> confirmPending({
+    Map<String, dynamic> auditMetadata = const {},
+  }) async {
     final proposal = _pendingProposal;
     if (proposal == null || _isBusy) return null;
 
@@ -129,16 +161,27 @@ class NimmyController extends ChangeNotifier {
     _warning = null;
     notifyListeners();
 
+    NimmyLogger.info('Executing confirmed proposal: ${proposal.toolName}', category: LogCategory.tool);
     try {
-      await _toolRegistry.audit(proposal, AuditStatus.confirmed);
+      await _toolRegistry.audit(
+        proposal,
+        AuditStatus.confirmed,
+        metadata: auditMetadata,
+      );
       final result = await _toolRegistry.execute(proposal, confirmed: true);
       _pendingProposal = null;
       _assistantMessage = result.message;
       _warning = result.warning;
       _orbState = result.success ? NimmyOrbState.success : NimmyOrbState.error;
+      NimmyLogger.info(
+        'Tool execution finished: success=${result.success}',
+        category: LogCategory.tool,
+        context: {'tool': proposal.toolName, 'success': result.success, 'message': result.message},
+      );
       await refresh();
       return result;
-    } catch (_) {
+    } catch (e, st) {
+      NimmyLogger.error('Tool execution exception', category: LogCategory.tool, error: e, stackTrace: st);
       _pendingProposal = null;
       _orbState = NimmyOrbState.error;
       _assistantMessage =
@@ -157,6 +200,7 @@ class NimmyController extends ChangeNotifier {
   Future<void> cancelPending({String reason = 'user_cancelled'}) async {
     final proposal = _pendingProposal;
     if (proposal == null) return;
+    NimmyLogger.info('Proposal cancelled: ${proposal.toolName}', category: LogCategory.tool, context: {'reason': reason});
     _pendingProposal = null;
     _orbState = NimmyOrbState.idle;
     _assistantMessage = 'Cancelled. Nothing was changed.';
@@ -167,7 +211,8 @@ class NimmyController extends ChangeNotifier {
         metadata: {'reason': reason},
       );
       await refresh();
-    } catch (_) {
+    } catch (e) {
+      NimmyLogger.warn('Failed to audit cancellation', category: LogCategory.tool, error: e);
       notifyListeners();
     }
   }

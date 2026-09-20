@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'dart:async';
 
 import '../../core/state/nimmy_controller.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/reminder.dart';
 import '../../services/permissions/permission_service.dart';
 import '../../services/voice/voice_service.dart';
+import '../../services/voice/wake_word_service.dart';
 import '../../widgets/confirmation_sheet.dart';
 import '../../widgets/status_badge.dart';
 import '../nimmy_orb/nimmy_orb_widget.dart';
@@ -24,20 +26,95 @@ class _VoiceScreenState extends State<VoiceScreen> {
   bool _isListening = false;
   bool _finalTranscriptHandled = false;
   VoiceService? _voiceService;
+  WakeWordService? _wakeWordService;
+  StreamSubscription? _wakeSubscription;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     _voiceService ??= context.read<VoiceService>();
+    if (_wakeWordService == null) {
+      _wakeWordService = context.read<WakeWordService>();
+      _wakeSubscription = _wakeWordService!.detections.listen(_onWakeDetected);
+      _initializeHandsFree();
+    }
   }
 
   @override
   void dispose() {
     _voiceService?.cancelListening();
     _voiceService?.stopSpeaking();
+    _wakeSubscription?.cancel();
     _textController.dispose();
     _focusNode.dispose();
     super.dispose();
+  }
+
+  Future<void> _initializeHandsFree() async {
+    final wake = _wakeWordService!;
+    await wake.initialize();
+    if (!mounted || !wake.canEnable || wake.isEnabled) return;
+    await wake.enable();
+  }
+
+  Future<void> _onWakeDetected(_) async {
+    if (!mounted || _isListening) return;
+    final controller = context.read<NimmyController>();
+    if (controller.isBusy) return;
+    final wake = _wakeWordService!;
+    await wake.pause(reason: 'voice_command_capture');
+    if (!mounted) return;
+    controller.setOrbState(
+      NimmyOrbState.wakeDetected,
+      message: 'I’m listening.',
+    );
+    await _captureCommand(handsFree: true);
+  }
+
+  Future<void> _captureCommand({bool handsFree = false}) async {
+    final voice = context.read<VoiceService>();
+    final controller = context.read<NimmyController>();
+    _finalTranscriptHandled = false;
+    if (mounted) setState(() => _isListening = true);
+    final result = await voice.startCommandCapture(
+      onTranscript: (text, isFinal) {
+        if (!mounted) return;
+        setState(() {
+          _textController.text = text;
+          _textController.selection = TextSelection.collapsed(
+            offset: text.length,
+          );
+        });
+        if (isFinal && !_finalTranscriptHandled) {
+          _finalTranscriptHandled = true;
+          unawaited(_finishCapture(text, handsFree: handsFree));
+        }
+      },
+      onError: (error) {
+        if (!mounted) return;
+        setState(() => _isListening = false);
+        controller.setOrbState(NimmyOrbState.error, message: error.message);
+        if (handsFree) unawaited(_wakeWordService!.resume());
+      },
+      onStatus: (_) {},
+      onSoundLevel: (level) {},
+    );
+    if (!mounted || result.started) return;
+    setState(() => _isListening = false);
+    controller.setOrbState(
+      NimmyOrbState.error,
+      message:
+          result.error?.message ??
+          'Speech recognition is unavailable. You can type instead.',
+    );
+    if (handsFree) await _wakeWordService!.resume();
+  }
+
+  Future<void> _finishCapture(String text, {required bool handsFree}) async {
+    await context.read<VoiceService>().stopListening();
+    if (mounted) setState(() => _isListening = false);
+    await _submit(text, source: InteractionSource.voice);
+    if (handsFree && mounted) await _wakeWordService!.resume();
   }
 
   Future<void> _toggleListening() async {
@@ -68,21 +145,24 @@ class _VoiceScreenState extends State<VoiceScreen> {
       return;
     }
 
-    _finalTranscriptHandled = false;
-    final started = await voice.startListening((text, isFinal) {
-      if (!mounted) return;
-      setState(() {
-        _textController.text = text;
-        _textController.selection = TextSelection.collapsed(
-          offset: _textController.text.length,
-        );
-      });
-      if (isFinal && !_finalTranscriptHandled) {
-        _finalTranscriptHandled = true;
-        setState(() => _isListening = false);
-        _submit(text, source: InteractionSource.voice);
-      }
-    });
+    final started = (await voice.startCommandCapture(
+      onTranscript: (text, isFinal) {
+        if (!mounted) return;
+        setState(() {
+          _textController.text = text;
+          _textController.selection = TextSelection.collapsed(
+            offset: _textController.text.length,
+          );
+        });
+        if (isFinal && !_finalTranscriptHandled) {
+          _finalTranscriptHandled = true;
+          unawaited(_finishCapture(text, handsFree: false));
+        }
+      },
+      onError: (error) =>
+          controller.setOrbState(NimmyOrbState.error, message: error.message),
+      onStatus: (_) {},
+    )).started;
     if (!mounted) return;
     if (!started) {
       controller.setOrbState(
