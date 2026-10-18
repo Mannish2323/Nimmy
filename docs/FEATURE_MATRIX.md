@@ -37,13 +37,43 @@
 
 | Feature | Screen | Frontend | Backend | Database | API | Permission | Confirmation | Offline | Sync | Audit | Tests | Real Device | Evidence | Status |
 |---------|--------|----------|---------|----------|-----|------------|--------------|---------|------|-------|-------|-------------|----------|--------|
-| Sign up | — | — | — | ✅ | — | — | — | — | — | — | — | — | — | NOT_STARTED |
-| Login | — | — | — | ✅ | — | — | — | — | — | — | — | — | — | NOT_STARTED |
-| Logout | — | — | — | — | — | — | — | — | — | — | — | — | — | NOT_STARTED |
-| Password reset | — | — | — | — | — | — | — | — | — | — | — | — | — | NOT_STARTED |
-| Session restore | — | — | — | — | — | — | — | — | — | — | — | — | — | NOT_STARTED |
-| Account delete | — | — | — | — | — | — | — | — | — | — | — | — | — | NOT_STARTED |
+| Sign up | /auth | ✅ | ✅ | ✅ | ✅ | — | — | ✅ | ✅ | — | ✅ (1) | Pending | auth_screen.dart, auth_service.dart, auth_screen_test.dart | IN_PROGRESS |
+| Login | /auth | ✅ | ✅ | ✅ | ✅ | — | — | ✅ | ✅ | — | ✅ (1) | Pending | auth_screen.dart, auth_service.dart, auth_screen_test.dart | IN_PROGRESS |
+| Logout | /settings | ✅ | ✅ | — | ✅ | — | ✅ | ✅ | ✅ | — | ✅ (1) | Pending | settings_screen.dart, auth_service_test.dart | IN_PROGRESS |
+| Password reset | /auth | ✅ | ✅ | — | ✅ | — | ✅ | ✅ | — | — | ✅ (1) | Pending | auth_screen.dart, auth_service_test.dart | IN_PROGRESS |
+| Session restore | Bootstrap | ✅ | ✅ | — | ✅ | — | — | ✅ | ✅ | — | ✅ (1) | Pending | app_bootstrap.dart, auth_service.dart | IN_PROGRESS |
+| Account delete | /settings | ✅ | ✅ | ✅ | ✅ | — | ✅ | ✅ | ✅ | — | ✅ (1) | Pending | settings_screen.dart, auth_service_test.dart | IN_PROGRESS |
 | RLS enforcement | — | — | — | ✅ | — | — | — | — | — | — | — | — | 015_mvp_action_foundation.sql | IN_PROGRESS |
+
+## Phase 3 — Tasks + Projects + Goals + Habits
+
+| Feature | Screen | Frontend | Backend | Database | API | Permission | Confirmation | Offline | Sync | Audit | Tests | Real Device | Evidence | Status |
+|---------|--------|----------|---------|----------|-----|------------|--------------|---------|------|-------|-------|-------------|----------|--------|
+| Productivity Models | All | ✅ | N/A | ✅ | N/A | — | — | ✅ | ✅ | — | ✅ (3) | Pending | task.dart, project.dart, goal.dart, habit.dart, task_model_test.dart | IN_PROGRESS |
+| Hive + Cloud Repo | /tasks | ✅ | ✅ | ✅ | ✅ | — | — | ✅ | ✅ | — | ✅ (3) | Pending | nimmy_repository.dart, hive_nimmy_repository.dart, task_repository_test.dart | IN_PROGRESS |
+| create_task tool | /tasks | ✅ | ✅ | ✅ | ✅ | — | ✅ | ✅ | ✅ | ✅ | ✅ (2) | Pending | tool_registry.dart, task_tool_registry_test.dart | IN_PROGRESS |
+| edit_task tool | /tasks | ✅ | ✅ | ✅ | ✅ | — | ✅ | ✅ | ✅ | ✅ | ✅ (1) | Pending | tool_registry.dart, task_tool_registry_test.dart | IN_PROGRESS |
+| complete_task tool | /tasks | ✅ | ✅ | ✅ | ✅ | — | ✅ | ✅ | ✅ | ✅ | ✅ (1) | Pending | tool_registry.dart, task_tool_registry_test.dart | IN_PROGRESS |
+| delete_task tool | /tasks | ✅ | ✅ | ✅ | ✅ | — | ✅ (destructive) | ✅ | ✅ | ✅ | ✅ (1) | Pending | tool_registry.dart, task_tool_registry_test.dart | IN_PROGRESS |
+| reschedule_task tool | /tasks | ✅ | ✅ | ✅ | ✅ | — | ✅ | ✅ | ✅ | ✅ | ✅ (1) | Pending | tool_registry.dart, task_tool_registry_test.dart | IN_PROGRESS |
+| Task Intent Parser | Voice | ✅ | — | — | — | — | — | ✅ | — | — | ✅ (5) | Pending | intent_parser.dart, task_intent_parser_test.dart | IN_PROGRESS |
+| Tasks Screen UI | /tasks | ✅ | — | ✅ | — | — | ✅ | ✅ | ✅ | — | ✅ (2) | Pending | tasks_screen.dart, tasks_screen_test.dart | IN_PROGRESS |
+
+## Phase 4 — Calendar + Reminders + Scheduling
+
+| Feature | Screen | Frontend | Backend | Database | API | Permission | Confirmation | Offline | Sync | Audit | Tests | Real Device | Evidence | Status |
+|---------|--------|----------|---------|----------|-----|------------|--------------|---------|------|-------|-------|-------------|----------|--------|
+| Calendar Event Model | All | ✅ | N/A | ✅ | N/A | — | — | ✅ | ✅ | — | ✅ (2) | Pending | calendar_event.dart, calendar_event_test.dart | IN_PROGRESS |
+| Calendar Repository | /calendar | ✅ | ✅ | ✅ | ✅ | — | — | ✅ | ✅ | — | ✅ (3) | Pending | nimmy_repository.dart, in_memory_nimmy_repository.dart, hive_nimmy_repository.dart, supabase_nimmy_repository.dart, calendar_repository_test.dart | IN_PROGRESS |
+| create_calendar_event tool | /calendar | ✅ | ✅ | ✅ | ✅ | — | ✅ | ✅ | ✅ | ✅ | ✅ (1) | Pending | tool_registry.dart, calendar_tool_registry_test.dart | IN_PROGRESS |
+| edit_calendar_event tool | /calendar | ✅ | ✅ | ✅ | ✅ | — | ✅ | ✅ | ✅ | ✅ | ✅ (1) | Pending | tool_registry.dart, calendar_tool_registry_test.dart | IN_PROGRESS |
+| reschedule_calendar_event tool | /calendar | ✅ | ✅ | ✅ | ✅ | — | ✅ | ✅ | ✅ | ✅ | ✅ (1) | Pending | tool_registry.dart, calendar_tool_registry_test.dart | IN_PROGRESS |
+| delete_calendar_event tool | /calendar | ✅ | ✅ | ✅ | ✅ | — | ✅ (destructive) | ✅ | ✅ | ✅ | ✅ (1) | Pending | tool_registry.dart, calendar_tool_registry_test.dart | IN_PROGRESS |
+| reschedule_reminder tool | /reminders | ✅ | ✅ | ✅ | ✅ | Notification | ✅ | ✅ | ✅ | ✅ | ✅ (1) | Pending | tool_registry.dart, reminders_screen.dart, calendar_tool_registry_test.dart | IN_PROGRESS |
+| delete_reminder tool | /reminders | ✅ | ✅ | ✅ | ✅ | Notification | ✅ (destructive) | ✅ | ✅ | ✅ | ✅ (1) | Pending | tool_registry.dart, calendar_tool_registry_test.dart | IN_PROGRESS |
+| Calendar Intent Parser | Voice | ✅ | — | — | — | — | — | ✅ | — | — | ✅ (6) | Pending | intent_parser.dart, calendar_intent_parser_test.dart | IN_PROGRESS |
+| Calendar Screen UI | /calendar | ✅ | — | ✅ | — | — | ✅ | ✅ | ✅ | — | ✅ (3) | Pending | calendar_screen.dart, calendar_screen_test.dart | IN_PROGRESS |
+| Reminders Reschedule Flow | /reminders | ✅ | ✅ | ✅ | ✅ | Notification | ✅ | ✅ | ✅ | ✅ | Manual UI | Pending | reminders_screen.dart | IN_PROGRESS |
 
 ## MVP Tools (Cross-Phase)
 

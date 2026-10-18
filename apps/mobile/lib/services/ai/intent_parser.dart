@@ -1,7 +1,9 @@
 import 'package:uuid/uuid.dart';
 
+import '../../models/calendar_event.dart';
 import '../../models/memory.dart';
 import '../../models/reminder.dart';
+import '../../models/task.dart';
 import '../../models/tool_action.dart';
 
 typedef Clock = DateTime Function();
@@ -22,7 +24,7 @@ class NimmyIntentParser {
     final original = rawText.trim();
     if (original.isEmpty) {
       return const IntentParseResult.clarification(
-        'Tell me what you want me to remember or when I should remind you.',
+        'Tell me what you want me to remember, schedule, or add as a task.',
       );
     }
 
@@ -35,10 +37,30 @@ class NimmyIntentParser {
     if (_looksLikeReminderIntent(lower)) {
       return _parseReminder(normalized, original, source);
     }
+    if (_looksLikeCalendarIntent(lower)) {
+      return _parseCalendar(normalized, original, source);
+    }
+    if (_looksLikeTaskIntent(lower)) {
+      return _parseTask(normalized, original, source);
+    }
 
     return const IntentParseResult.error(
-      'This build currently supports reminders and explicit “remember this” requests.',
+      'This build currently supports reminders, calendar events, tasks, and explicit “remember this” requests.',
     );
+  }
+
+  bool _looksLikeCalendarIntent(String text) {
+    return text == 'schedule' ||
+        text.startsWith('schedule ') ||
+        text.startsWith('schedule a ') ||
+        text.startsWith('schedule an ') ||
+        text == 'calendar' ||
+        text.startsWith('calendar:') ||
+        text == 'add event' ||
+        text.startsWith('add event') ||
+        text == 'new event' ||
+        text.startsWith('new event') ||
+        text.startsWith('event:');
   }
 
   bool _looksLikeMemoryIntent(String text) {
@@ -284,6 +306,178 @@ class NimmyIntentParser {
 
   String _trimTrailingPunctuation(String value) {
     return value.trim().replaceFirst(RegExp(r'[.!?]+$'), '').trim();
+  }
+
+  bool _looksLikeTaskIntent(String text) {
+    return text.startsWith('create task') ||
+        text.startsWith('create a task') ||
+        text.startsWith('add task') ||
+        text.startsWith('add a task') ||
+        text.startsWith('new task') ||
+        text.startsWith('task:') ||
+        text.startsWith('todo:') ||
+        text.startsWith('to-do:');
+  }
+
+  IntentParseResult _parseTask(
+    String text,
+    String original,
+    InteractionSource source,
+  ) {
+    var content = text;
+    final patterns = [
+      RegExp(r'^(?:create|add)\s+(?:a\s+)?task(?:\s+to)?\s*:?\s*', caseSensitive: false),
+      RegExp(r'^new\s+task\s*:?\s*', caseSensitive: false),
+      RegExp(r'^(?:task|todo|to-do)\s*:?\s*', caseSensitive: false),
+    ];
+    for (final pattern in patterns) {
+      content = content.replaceFirst(pattern, '');
+    }
+
+    var priority = TaskPriority.medium;
+    if (RegExp(r'\b(?:urgent|critical)\b', caseSensitive: false).hasMatch(content)) {
+      priority = TaskPriority.urgent;
+      content = content.replaceAll(RegExp(r'\b(?:with\s+)?(?:urgent|critical)(?:\s+priority)?\b', caseSensitive: false), '');
+    } else if (RegExp(r'\b(?:high\s+priority|important)\b', caseSensitive: false).hasMatch(content)) {
+      priority = TaskPriority.high;
+      content = content.replaceAll(RegExp(r'\b(?:with\s+)?(?:high\s+priority|important)\b', caseSensitive: false), '');
+    } else if (RegExp(r'\b(?:low\s+priority)\b', caseSensitive: false).hasMatch(content)) {
+      priority = TaskPriority.low;
+      content = content.replaceAll(RegExp(r'\b(?:with\s+)?low\s+priority\b', caseSensitive: false), '');
+    }
+
+    DateTime? dueDate;
+    final now = _clock();
+    if (RegExp(r'\b(?:by|due)\s+tomorrow\b', caseSensitive: false).hasMatch(content)) {
+      dueDate = DateTime(now.year, now.month, now.day + 1, 18, 0);
+      content = content.replaceAll(RegExp(r'\b(?:by|due)\s+tomorrow\b', caseSensitive: false), '');
+    } else if (RegExp(r'\b(?:by|due)\s+today\b', caseSensitive: false).hasMatch(content)) {
+      dueDate = DateTime(now.year, now.month, now.day, 18, 0);
+      content = content.replaceAll(RegExp(r'\b(?:by|due)\s+today\b', caseSensitive: false), '');
+    }
+
+    content = _trimTrailingPunctuation(content).trim();
+    if (content.isEmpty) {
+      return const IntentParseResult.clarification(
+        'What would you like the task to be?',
+      );
+    }
+
+    return IntentParseResult.proposal(
+      ToolProposal(
+        requestId: _uuid.v4(),
+        intent: NimmyIntent.createTask,
+        toolName: 'create_task',
+        input: CreateTaskInput(
+          title: _sentenceCase(content),
+          priority: priority,
+          dueDate: dueDate,
+          timezone: timezone,
+        ),
+        source: source,
+        originalText: original,
+      ),
+    );
+  }
+
+  IntentParseResult _parseCalendar(
+    String text,
+    String original,
+    InteractionSource source,
+  ) {
+    var content = text;
+    final patterns = [
+      RegExp(r'^schedule(?:\s+(?:a\s+|an\s+)?(?:meeting\s+with\s+|event\s+for\s+|event\s*:?\s*)?)?', caseSensitive: false),
+      RegExp(r'^add\s+event\s*:?\s*', caseSensitive: false),
+      RegExp(r'^new\s+event\s*:?\s*', caseSensitive: false),
+      RegExp(r'^(?:calendar|event)\s*:?\s*', caseSensitive: false),
+    ];
+    for (final pattern in patterns) {
+      content = content.replaceFirst(pattern, '');
+    }
+
+    var eventType = EventType.personal;
+    final lower = text.toLowerCase();
+    if (lower.contains('meeting')) {
+      eventType = EventType.meeting;
+    } else if (lower.contains('deadline')) {
+      eventType = EventType.deadline;
+    }
+
+    final now = _clock();
+    DateTime? startTime;
+    final timeMatch = RegExp(
+      r'\b(?:on\s+)?(today|tomorrow)\s+at\s+(\d{1,2})(?::(\d{2}))?\s*(am|pm)?\b',
+      caseSensitive: false,
+    ).firstMatch(content);
+
+    if (timeMatch != null) {
+      final parsedTime = _parseTime(
+        hourText: timeMatch.group(2)!,
+        minuteText: timeMatch.group(3),
+        meridiem: timeMatch.group(4),
+      );
+      if (parsedTime == null) return _ambiguousTime();
+      final dayOffset = timeMatch.group(1)!.toLowerCase() == 'tomorrow' ? 1 : 0;
+      startTime = DateTime(
+        now.year,
+        now.month,
+        now.day + dayOffset,
+        parsedTime.$1,
+        parsedTime.$2,
+      );
+      content = content.replaceRange(timeMatch.start, timeMatch.end, '').trim();
+    } else {
+      final simpleTimeMatch = RegExp(
+        r'\bat\s+(\d{1,2})(?::(\d{2}))?\s*(am|pm)?\b',
+        caseSensitive: false,
+      ).firstMatch(content);
+      if (simpleTimeMatch != null) {
+        final parsedTime = _parseTime(
+          hourText: simpleTimeMatch.group(1)!,
+          minuteText: simpleTimeMatch.group(2),
+          meridiem: simpleTimeMatch.group(3),
+        );
+        if (parsedTime == null) return _ambiguousTime();
+        final candidate = DateTime(
+          now.year,
+          now.month,
+          now.day,
+          parsedTime.$1,
+          parsedTime.$2,
+        );
+        startTime = candidate.isAfter(now)
+            ? candidate
+            : DateTime(now.year, now.month, now.day + 1, parsedTime.$1, parsedTime.$2);
+        content = content.replaceRange(simpleTimeMatch.start, simpleTimeMatch.end, '').trim();
+      }
+    }
+
+    content = _trimTrailingPunctuation(content).trim();
+    if (content.isEmpty) {
+      return const IntentParseResult.clarification(
+        'What event would you like me to schedule?',
+      );
+    }
+
+    startTime ??= DateTime(now.year, now.month, now.day + 1, 9, 0);
+    final endTime = startTime.add(const Duration(hours: 1));
+
+    return IntentParseResult.proposal(
+      ToolProposal(
+        requestId: _uuid.v4(),
+        intent: NimmyIntent.createCalendarEvent,
+        toolName: 'create_calendar_event',
+        input: CreateCalendarEventInput(
+          title: _sentenceCase(content),
+          startTime: startTime,
+          endTime: endTime,
+          eventType: eventType,
+        ),
+        source: source,
+        originalText: original,
+      ),
+    );
   }
 
   String _sentenceCase(String value) {

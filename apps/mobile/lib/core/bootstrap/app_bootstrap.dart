@@ -1,6 +1,7 @@
 import 'package:supabase/supabase.dart';
 
 import '../../services/ai/intent_parser.dart';
+import '../../services/auth/auth_service.dart';
 import '../../services/notifications/notification_service.dart';
 import '../../services/permissions/permission_service.dart';
 import '../../services/storage/hive_nimmy_repository.dart';
@@ -22,6 +23,7 @@ class AppBootstrap {
     required this.controller,
     required this.voiceService,
     required this.permissionService,
+    required this.authService,
     WakeWordService? wakeWordService,
     this.startupWarning,
   }) : wakeWordService =
@@ -32,6 +34,7 @@ class AppBootstrap {
   final NimmyController controller;
   final VoiceService voiceService;
   final PermissionService permissionService;
+  final AuthService authService;
   final WakeWordService wakeWordService;
   final String? startupWarning;
 
@@ -61,39 +64,42 @@ class AppBootstrap {
           'Local persistence is unavailable. Data will last for this session only.';
     }
 
-    NimmyRepository repository = localRepository;
-    var cloudConfigured = false;
-    var userId = 'local-user';
+    SupabaseClient? client;
     if (config.hasSupabaseConfiguration) {
       try {
-        final client = SupabaseClient(
+        client = SupabaseClient(
           config.supabaseUrl,
           config.supabaseAnonKey,
         );
-        if (client.auth.currentUser != null) {
-          final remote = SupabaseNimmyRepository(client);
-          await remote.initialize();
-          final offlineFirst = OfflineFirstNimmyRepository(
-            local: localRepository,
-            remote: remote,
-          );
-          await offlineFirst.synchronize();
-          repository = offlineFirst;
-          cloudConfigured = true;
-          userId = remote.profileId;
-          NimmyLogger.info(
-            'Supabase cloud repository initialized',
-            category: LogCategory.sync,
-            context: {'userId': userId},
-          );
-        } else {
-          warning ??=
-              'Cloud is configured, but sign-in is required before sync.';
-          NimmyLogger.info(
-            'Supabase configured but user not signed in',
-            category: LogCategory.sync,
-          );
-        }
+      } catch (e) {
+        NimmyLogger.warn('SupabaseClient initialization failed', category: LogCategory.sync, error: e);
+      }
+    }
+
+    final authService = AuthService(client: client);
+    await authService.initialize();
+
+    NimmyRepository repository = localRepository;
+    var cloudConfigured = false;
+    var userId = 'local-user';
+
+    if (client != null && authService.isAuthenticated) {
+      try {
+        final remote = SupabaseNimmyRepository(client);
+        await remote.initialize();
+        final offlineFirst = OfflineFirstNimmyRepository(
+          local: localRepository,
+          remote: remote,
+        );
+        await offlineFirst.synchronize();
+        repository = offlineFirst;
+        cloudConfigured = true;
+        userId = remote.profileId;
+        NimmyLogger.info(
+          'Supabase cloud repository initialized',
+          category: LogCategory.sync,
+          context: {'userId': userId},
+        );
       } catch (e) {
         warning ??= 'Cloud sync is unavailable. Nimmy is using local storage.';
         NimmyLogger.warn(
@@ -102,6 +108,13 @@ class AppBootstrap {
           error: e,
         );
       }
+    } else if (client != null) {
+      warning ??=
+          'Cloud is configured, but sign-in is required before sync.';
+      NimmyLogger.info(
+        'Supabase configured but user not signed in',
+        category: LogCategory.sync,
+      );
     } else {
       NimmyLogger.info(
         'App configured in local-only mode',
@@ -147,6 +160,46 @@ class AppBootstrap {
     );
     await controller.initialize();
 
+    // Dynamically re-wire storage repository on auth state changes
+    authService.addListener(() async {
+      if (authService.isAuthenticated && client != null) {
+        try {
+          final remote = SupabaseNimmyRepository(client);
+          await remote.initialize();
+          final offlineFirst = OfflineFirstNimmyRepository(
+            local: localRepository,
+            remote: remote,
+          );
+          await offlineFirst.synchronize();
+          final cloudRegistry = ToolRegistry(
+            repository: offlineFirst,
+            reminderScheduler: scheduler,
+            userId: remote.profileId,
+          );
+          await controller.updateRepository(
+            repository: offlineFirst,
+            toolRegistry: cloudRegistry,
+            cloudConfigured: true,
+          );
+          NimmyLogger.info('Switched controller to cloud synchronized repository', category: LogCategory.sync);
+        } catch (e) {
+          NimmyLogger.warn('Failed to switch to cloud repository on login', category: LogCategory.sync, error: e);
+        }
+      } else {
+        final localToolRegistry = ToolRegistry(
+          repository: localRepository,
+          reminderScheduler: scheduler,
+          userId: 'local-user',
+        );
+        await controller.updateRepository(
+          repository: localRepository,
+          toolRegistry: localToolRegistry,
+          cloudConfigured: false,
+        );
+        NimmyLogger.info('Switched controller to local repository on logout', category: LogCategory.sync);
+      }
+    });
+
     NimmyLogger.info(
       'AppBootstrap complete',
       category: LogCategory.system,
@@ -166,6 +219,7 @@ class AppBootstrap {
       controller: controller,
       voiceService: VoiceService(),
       permissionService: PermissionService(),
+      authService: authService,
       wakeWordService: wakeWordService,
       startupWarning: warning,
     );

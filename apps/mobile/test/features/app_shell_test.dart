@@ -9,6 +9,7 @@ import 'package:nimmy/core/state/nimmy_controller.dart';
 import 'package:nimmy/main.dart';
 import 'package:nimmy/models/wake_word.dart';
 import 'package:nimmy/services/ai/intent_parser.dart';
+import 'package:nimmy/services/auth/auth_service.dart';
 import 'package:nimmy/services/notifications/notification_service.dart';
 import 'package:nimmy/services/permissions/permission_service.dart';
 import 'package:nimmy/services/storage/in_memory_nimmy_repository.dart';
@@ -93,6 +94,7 @@ Future<AppBootstrap> _createTestBootstrap() async {
       defaultTimezone: 'Asia/Kolkata',
     ),
     controller: controller,
+    authService: AuthService(client: null),
     voiceService: VoiceService(),
     permissionService: PermissionService(),
     wakeWordService: WakeWordService(platform: _FakeWakeWordPlatform()),
@@ -126,12 +128,12 @@ void main() {
       // 2. Navigate to Tasks
       await tester.tap(find.widgetWithText(InkResponse, 'Tasks'));
       await tester.pump(const Duration(milliseconds: 300));
-      expect(find.text('Task management is not available yet'), findsOneWidget);
+      expect(find.text('Productivity'), findsOneWidget);
 
       // 3. Navigate to Calendar
       await tester.tap(find.widgetWithText(InkResponse, 'Calendar'));
       await tester.pump(const Duration(milliseconds: 300));
-      expect(find.text('Calendar integration is not connected'), findsOneWidget);
+      expect(find.text('Calendar & Agenda'), findsOneWidget);
 
       // 4. Navigate to Memory
       await tester.tap(find.widgetWithText(InkResponse, 'Memory'));
@@ -150,12 +152,14 @@ void main() {
 
       // 7. Center Orb opens Voice modal
       await tester.tap(find.byKey(const Key('shell_orb_button')));
-      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
       expect(find.byTooltip('Close'), findsOneWidget);
 
       // 8. Close voice modal
       await tester.tap(find.byTooltip('Close'));
-      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
       expect(find.text('Hey, I’m Nimmy.'), findsOneWidget);
 
       // 9. Rapid tab switching resilience without exceptions

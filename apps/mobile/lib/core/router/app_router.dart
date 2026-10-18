@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/audit/audit_screen.dart';
+import '../../features/auth/auth_screen.dart';
 import '../../features/calendar/calendar_screen.dart';
 import '../../features/dashboard/dashboard_screen.dart';
 import '../../features/memory/memory_screen.dart';
@@ -39,6 +40,7 @@ class NimmyRouter {
       _modalRoute('/permissions', const PermissionCenterScreen()),
       _modalRoute('/notes', const NotesScreen()),
       _modalRoute('/settings', const SettingsScreen()),
+      _modalRoute('/auth', const AuthScreen()),
     ],
   );
 

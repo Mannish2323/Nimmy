@@ -1,8 +1,10 @@
 import 'package:uuid/uuid.dart';
 
 import '../../models/audit_event.dart';
+import '../../models/calendar_event.dart';
 import '../../models/memory.dart';
 import '../../models/reminder.dart';
+import '../../models/task.dart';
 import '../../models/tool_action.dart';
 import '../ai/intent_parser.dart';
 import '../notifications/notification_service.dart';
@@ -77,6 +79,17 @@ class ToolRegistry {
       return await switch (proposal.input) {
         CreateReminderInput input => _createReminder(proposal, input),
         SaveMemoryInput input => _saveMemory(proposal, input),
+        CreateTaskInput input => _createTask(proposal, input),
+        EditTaskInput input => _editTask(proposal, input),
+        CompleteTaskInput input => _completeTask(proposal, input),
+        DeleteTaskInput input => _deleteTask(proposal, input),
+        RescheduleTaskInput input => _rescheduleTask(proposal, input),
+        CreateCalendarEventInput input => _createCalendarEvent(proposal, input),
+        EditCalendarEventInput input => _editCalendarEvent(proposal, input),
+        DeleteCalendarEventInput input => _deleteCalendarEvent(proposal, input),
+        RescheduleCalendarEventInput input => _rescheduleCalendarEvent(proposal, input),
+        RescheduleReminderInput input => _rescheduleReminder(proposal, input),
+        DeleteReminderInput input => _deleteReminder(proposal, input),
       };
     } catch (_) {
       try {
@@ -224,6 +237,493 @@ class ToolRegistry {
       success: true,
       recordId: memory.id,
       message: 'Done. I saved that to your memory.',
+    );
+  }
+
+  Future<ToolExecutionResult> _createTask(
+    ToolProposal proposal,
+    CreateTaskInput input,
+  ) async {
+    if (input.title.trim().isEmpty) {
+      throw const FormatException('Task title is required.');
+    }
+
+    final duplicate = await _repository.findTaskByRequestId(proposal.requestId);
+    if (duplicate != null) {
+      return ToolExecutionResult(
+        success: true,
+        message: 'That task already exists.',
+        recordId: duplicate.id,
+        wasDuplicate: true,
+      );
+    }
+
+    final now = _clock().toUtc();
+    final task = NimmyTask(
+      id: _uuid.v4(),
+      userId: userId,
+      requestId: proposal.requestId,
+      projectId: input.projectId,
+      title: input.title.trim(),
+      description: input.description?.trim(),
+      priority: input.priority,
+      status: TaskStatus.todo,
+      dueDate: input.dueDate?.toUtc(),
+      tags: input.tags,
+      isRecurring: input.recurrence != null,
+      recurrenceRule: input.recurrence,
+      aiGenerated: proposal.source != InteractionSource.text,
+      createdAt: now,
+      updatedAt: now,
+    );
+
+    await _repository.saveTask(task);
+    try {
+      await audit(
+        proposal,
+        AuditStatus.executed,
+        metadata: {'record_id': task.id, 'priority': task.priority.name},
+      );
+    } catch (_) {
+      await _repository.deleteTask(task.id);
+      rethrow;
+    }
+
+    return ToolExecutionResult(
+      success: true,
+      recordId: task.id,
+      message: 'Done. Task added to your list.',
+    );
+  }
+
+  Future<ToolExecutionResult> _editTask(
+    ToolProposal proposal,
+    EditTaskInput input,
+  ) async {
+    final existing = await _repository.findTaskById(input.taskId);
+    if (existing == null) {
+      return const ToolExecutionResult(
+        success: false,
+        message: 'Task not found.',
+      );
+    }
+
+    final now = _clock().toUtc();
+    final updated = existing.copyWith(
+      title: input.title?.trim().isNotEmpty == true ? input.title!.trim() : null,
+      priority: input.priority,
+      dueDate: input.dueDate?.toUtc(),
+      description: input.description?.trim(),
+      projectId: input.projectId,
+      tags: input.tags,
+      updatedAt: now,
+    );
+
+    await _repository.saveTask(updated);
+    try {
+      await audit(
+        proposal,
+        AuditStatus.executed,
+        metadata: {'record_id': updated.id},
+      );
+    } catch (_) {
+      // Restore previous state if audit fails
+      await _repository.saveTask(existing);
+      rethrow;
+    }
+
+    return ToolExecutionResult(
+      success: true,
+      recordId: updated.id,
+      message: 'Task updated.',
+    );
+  }
+
+  Future<ToolExecutionResult> _completeTask(
+    ToolProposal proposal,
+    CompleteTaskInput input,
+  ) async {
+    final existing = await _repository.findTaskById(input.taskId);
+    if (existing == null) {
+      return const ToolExecutionResult(
+        success: false,
+        message: 'Task not found.',
+      );
+    }
+
+    final now = _clock().toUtc();
+    final updated = existing.copyWith(
+      status: TaskStatus.done,
+      completedAt: input.completedAt?.toUtc() ?? now,
+      updatedAt: now,
+    );
+
+    await _repository.saveTask(updated);
+    try {
+      await audit(
+        proposal,
+        AuditStatus.executed,
+        metadata: {'record_id': updated.id},
+      );
+    } catch (_) {
+      await _repository.saveTask(existing);
+      rethrow;
+    }
+
+    return ToolExecutionResult(
+      success: true,
+      recordId: updated.id,
+      message: 'Task marked as completed.',
+    );
+  }
+
+  Future<ToolExecutionResult> _deleteTask(
+    ToolProposal proposal,
+    DeleteTaskInput input,
+  ) async {
+    final existing = await _repository.findTaskById(input.taskId);
+    if (existing == null) {
+      return const ToolExecutionResult(
+        success: false,
+        message: 'Task not found.',
+      );
+    }
+
+    await _repository.deleteTask(input.taskId);
+    try {
+      await audit(
+        proposal,
+        AuditStatus.executed,
+        metadata: {'record_id': input.taskId},
+      );
+    } catch (_) {
+      await _repository.saveTask(existing);
+      rethrow;
+    }
+
+    return ToolExecutionResult(
+      success: true,
+      recordId: input.taskId,
+      message: 'Task deleted.',
+    );
+  }
+
+  Future<ToolExecutionResult> _rescheduleTask(
+    ToolProposal proposal,
+    RescheduleTaskInput input,
+  ) async {
+    final existing = await _repository.findTaskById(input.taskId);
+    if (existing == null) {
+      return const ToolExecutionResult(
+        success: false,
+        message: 'Task not found.',
+      );
+    }
+
+    final now = _clock().toUtc();
+    final updated = existing.copyWith(
+      dueDate: input.newDueDate.toUtc(),
+      updatedAt: now,
+    );
+
+    await _repository.saveTask(updated);
+    try {
+      await audit(
+        proposal,
+        AuditStatus.executed,
+        metadata: {
+          'record_id': updated.id,
+          'new_due_date': input.newDueDate.toUtc().toIso8601String(),
+          if (input.reason != null) 'reason': input.reason,
+        },
+      );
+    } catch (_) {
+      await _repository.saveTask(existing);
+      rethrow;
+    }
+
+    return ToolExecutionResult(
+      success: true,
+      recordId: updated.id,
+      message: 'Task rescheduled.',
+    );
+  }
+
+  Future<ToolExecutionResult> _createCalendarEvent(
+    ToolProposal proposal,
+    CreateCalendarEventInput input,
+  ) async {
+    if (input.title.trim().isEmpty) {
+      throw const FormatException('Event title is required.');
+    }
+
+    final now = _clock().toUtc();
+    final event = NimmyCalendarEvent(
+      id: _uuid.v4(),
+      userId: userId,
+      taskId: input.taskId,
+      title: input.title.trim(),
+      description: input.description?.trim(),
+      eventType: input.eventType,
+      startTime: input.startTime.toUtc(),
+      endTime: input.endTime?.toUtc(),
+      isAllDay: input.isAllDay,
+      location: input.location?.trim(),
+      colorHex: input.colorHex,
+      createdAt: now,
+      updatedAt: now,
+    );
+
+    await _repository.saveCalendarEvent(event);
+    try {
+      await audit(
+        proposal,
+        AuditStatus.executed,
+        metadata: {
+          'record_id': event.id,
+          'title': event.title,
+          'start_time': event.startTime.toIso8601String(),
+        },
+      );
+    } catch (_) {
+      await _repository.deleteCalendarEvent(event.id);
+      rethrow;
+    }
+
+    return ToolExecutionResult(
+      success: true,
+      recordId: event.id,
+      message: 'Event scheduled.',
+    );
+  }
+
+  Future<ToolExecutionResult> _editCalendarEvent(
+    ToolProposal proposal,
+    EditCalendarEventInput input,
+  ) async {
+    final existing = await _repository.findCalendarEventById(input.id);
+    if (existing == null) {
+      return const ToolExecutionResult(
+        success: false,
+        message: 'Event not found.',
+      );
+    }
+
+    final now = _clock().toUtc();
+    final updated = existing.copyWith(
+      title: input.title != null && input.title!.trim().isNotEmpty
+          ? input.title!.trim()
+          : null,
+      startTime: input.startTime?.toUtc(),
+      endTime: input.endTime?.toUtc(),
+      isAllDay: input.isAllDay,
+      eventType: input.eventType,
+      description: input.description?.trim(),
+      location: input.location?.trim(),
+      colorHex: input.colorHex,
+      updatedAt: now,
+    );
+
+    await _repository.saveCalendarEvent(updated);
+    try {
+      await audit(
+        proposal,
+        AuditStatus.executed,
+        metadata: {'record_id': updated.id},
+      );
+    } catch (_) {
+      await _repository.saveCalendarEvent(existing);
+      rethrow;
+    }
+
+    return ToolExecutionResult(
+      success: true,
+      recordId: updated.id,
+      message: 'Event updated.',
+    );
+  }
+
+  Future<ToolExecutionResult> _deleteCalendarEvent(
+    ToolProposal proposal,
+    DeleteCalendarEventInput input,
+  ) async {
+    final existing = await _repository.findCalendarEventById(input.id);
+    if (existing == null) {
+      return const ToolExecutionResult(
+        success: false,
+        message: 'Event not found.',
+      );
+    }
+
+    await _repository.deleteCalendarEvent(input.id);
+    try {
+      await audit(
+        proposal,
+        AuditStatus.executed,
+        metadata: {'record_id': input.id},
+      );
+    } catch (_) {
+      await _repository.saveCalendarEvent(existing);
+      rethrow;
+    }
+
+    return ToolExecutionResult(
+      success: true,
+      recordId: input.id,
+      message: 'Event deleted.',
+    );
+  }
+
+  Future<ToolExecutionResult> _rescheduleCalendarEvent(
+    ToolProposal proposal,
+    RescheduleCalendarEventInput input,
+  ) async {
+    final existing = await _repository.findCalendarEventById(input.id);
+    if (existing == null) {
+      return const ToolExecutionResult(
+        success: false,
+        message: 'Event not found.',
+      );
+    }
+
+    final now = _clock().toUtc();
+    final newStart = input.startTime.toUtc();
+    DateTime? newEnd;
+    if (input.endTime != null) {
+      newEnd = input.endTime!.toUtc();
+    } else if (existing.endTime != null) {
+      final duration = existing.endTime!.difference(existing.startTime);
+      newEnd = newStart.add(duration);
+    }
+
+    final updated = existing.copyWith(
+      startTime: newStart,
+      endTime: newEnd,
+      updatedAt: now,
+    );
+
+    await _repository.saveCalendarEvent(updated);
+    try {
+      await audit(
+        proposal,
+        AuditStatus.executed,
+        metadata: {
+          'record_id': updated.id,
+          'start_time': newStart.toIso8601String(),
+          if (newEnd != null) 'end_time': newEnd.toIso8601String(),
+          if (input.reason != null) 'reason': input.reason,
+        },
+      );
+    } catch (_) {
+      await _repository.saveCalendarEvent(existing);
+      rethrow;
+    }
+
+    return ToolExecutionResult(
+      success: true,
+      recordId: updated.id,
+      message: 'Event rescheduled.',
+    );
+  }
+
+  Future<ToolExecutionResult> _rescheduleReminder(
+    ToolProposal proposal,
+    RescheduleReminderInput input,
+  ) async {
+    if (!input.scheduledAt.isAfter(_clock().toUtc())) {
+      throw const FormatException('Reminder must be scheduled for a future time.');
+    }
+
+    final reminders = await _repository.listReminders();
+    NimmyReminder? existing;
+    for (final r in reminders) {
+      if (r.id == input.id) {
+        existing = r;
+        break;
+      }
+    }
+
+    if (existing == null) {
+      return const ToolExecutionResult(
+        success: false,
+        message: 'Reminder not found.',
+      );
+    }
+
+    final now = _clock().toUtc();
+    await _reminderScheduler.cancel(existing.id);
+    var updated = existing.copyWith(
+      scheduledAt: input.scheduledAt.toUtc(),
+      updatedAt: now,
+    );
+    bool scheduled = false;
+    try {
+      scheduled = await _reminderScheduler.schedule(updated);
+    } catch (_) {
+      scheduled = false;
+    }
+    updated = updated.copyWith(notificationScheduled: scheduled);
+
+    await _repository.saveReminder(updated);
+    try {
+      await audit(
+        proposal,
+        AuditStatus.executed,
+        metadata: {
+          'record_id': updated.id,
+          'scheduled_at': input.scheduledAt.toUtc().toIso8601String(),
+          if (input.reason != null) 'reason': input.reason,
+        },
+      );
+    } catch (_) {
+      await _repository.saveReminder(existing);
+      rethrow;
+    }
+
+    return ToolExecutionResult(
+      success: true,
+      recordId: updated.id,
+      message: 'Reminder rescheduled.',
+    );
+  }
+
+  Future<ToolExecutionResult> _deleteReminder(
+    ToolProposal proposal,
+    DeleteReminderInput input,
+  ) async {
+    final reminders = await _repository.listReminders();
+    NimmyReminder? existing;
+    for (final r in reminders) {
+      if (r.id == input.id) {
+        existing = r;
+        break;
+      }
+    }
+
+    if (existing == null) {
+      return const ToolExecutionResult(
+        success: false,
+        message: 'Reminder not found.',
+      );
+    }
+
+    await _reminderScheduler.cancel(input.id);
+    await _repository.deleteReminder(input.id);
+    try {
+      await audit(
+        proposal,
+        AuditStatus.executed,
+        metadata: {'record_id': input.id},
+      );
+    } catch (_) {
+      await _repository.saveReminder(existing);
+      rethrow;
+    }
+
+    return ToolExecutionResult(
+      success: true,
+      recordId: input.id,
+      message: 'Reminder deleted.',
     );
   }
 }

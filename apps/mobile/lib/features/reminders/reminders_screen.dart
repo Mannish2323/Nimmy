@@ -9,6 +9,7 @@ import '../../models/reminder.dart';
 import '../../widgets/empty_state.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/glow_button.dart';
+import '../../widgets/nimmy_snackbar.dart';
 import '../../widgets/status_badge.dart';
 
 class RemindersScreen extends StatefulWidget {
@@ -108,6 +109,7 @@ class _RemindersScreenState extends State<RemindersScreen> {
                       itemBuilder: (context, index) => _ReminderCard(
                         reminder: reminders[index],
                         onDelete: () => _delete(reminders[index]),
+                        onReschedule: () => _reschedule(reminders[index]),
                       ),
                     ),
                   ),
@@ -162,15 +164,65 @@ class _RemindersScreenState extends State<RemindersScreen> {
     if (confirmed != true || !mounted) return;
     await context.read<NimmyController>().deleteReminder(reminder);
   }
+
+  Future<void> _reschedule(NimmyReminder reminder) async {
+    final now = DateTime.now();
+    final pickedDate = await showDatePicker(
+      context: context,
+      initialDate: reminder.scheduledAt.isAfter(now)
+          ? reminder.scheduledAt.toLocal()
+          : now.add(const Duration(days: 1)),
+      firstDate: now,
+      lastDate: now.add(const Duration(days: 365)),
+    );
+    if (pickedDate == null || !mounted) return;
+
+    final pickedTime = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(reminder.scheduledAt.toLocal()),
+    );
+    if (pickedTime == null || !mounted) return;
+
+    final newDateTime = DateTime(
+      pickedDate.year,
+      pickedDate.month,
+      pickedDate.day,
+      pickedTime.hour,
+      pickedTime.minute,
+    );
+
+    if (!newDateTime.isAfter(DateTime.now())) {
+      if (mounted) {
+        NimmySnackbar.showError(
+          context,
+          'Please choose a future date and time.',
+        );
+      }
+      return;
+    }
+
+    await context.read<NimmyController>().rescheduleReminder(reminder, newDateTime);
+    if (mounted) {
+      NimmySnackbar.showSuccess(
+        context,
+        'Reminder rescheduled to ${DateFormat('MMM d, h:mm a').format(newDateTime)}',
+      );
+    }
+  }
 }
 
 enum _ReminderFilter { upcoming, recurring, history }
 
 class _ReminderCard extends StatelessWidget {
-  const _ReminderCard({required this.reminder, required this.onDelete});
+  const _ReminderCard({
+    required this.reminder,
+    required this.onDelete,
+    required this.onReschedule,
+  });
 
   final NimmyReminder reminder;
   final VoidCallback onDelete;
+  final VoidCallback onReschedule;
 
   @override
   Widget build(BuildContext context) {
@@ -248,22 +300,29 @@ class _ReminderCard extends StatelessWidget {
             tooltip: 'Reminder actions',
             onSelected: (value) {
               if (value == 'delete') onDelete();
-              if (value == 'reschedule') {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                      'Rescheduling is not available in this build. Create a replacement with Nimmy.',
-                    ),
-                  ),
-                );
-              }
+              if (value == 'reschedule') onReschedule();
             },
             itemBuilder: (context) => const [
               PopupMenuItem(
                 value: 'reschedule',
-                child: Text('Reschedule (coming soon)'),
+                child: Row(
+                  children: [
+                    Icon(Icons.schedule_rounded, size: 18),
+                    SizedBox(width: 8),
+                    Text('Reschedule'),
+                  ],
+                ),
               ),
-              PopupMenuItem(value: 'delete', child: Text('Delete')),
+              PopupMenuItem(
+                value: 'delete',
+                child: Row(
+                  children: [
+                    Icon(Icons.delete_outline_rounded, size: 18, color: NimmyColors.red),
+                    SizedBox(width: 8),
+                    Text('Delete', style: TextStyle(color: NimmyColors.red)),
+                  ],
+                ),
+              ),
             ],
           ),
         ],

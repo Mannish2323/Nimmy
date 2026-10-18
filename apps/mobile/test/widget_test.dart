@@ -4,6 +4,7 @@ import 'package:nimmy/core/config/app_config.dart';
 import 'package:nimmy/core/state/nimmy_controller.dart';
 import 'package:nimmy/main.dart';
 import 'package:nimmy/services/ai/intent_parser.dart';
+import 'package:nimmy/services/auth/auth_service.dart';
 import 'package:nimmy/services/notifications/notification_service.dart';
 import 'package:nimmy/services/permissions/permission_service.dart';
 import 'package:nimmy/services/storage/in_memory_nimmy_repository.dart';
@@ -34,6 +35,7 @@ void main() {
         defaultTimezone: 'Asia/Kolkata',
       ),
       controller: controller,
+      authService: AuthService(client: null),
       voiceService: VoiceService(),
       permissionService: PermissionService(),
     );

@@ -4,7 +4,10 @@ import 'package:provider/provider.dart';
 
 import '../../core/state/nimmy_controller.dart';
 import '../../core/theme/app_theme.dart';
+import '../../services/auth/auth_service.dart';
 import '../../widgets/glass_card.dart';
+import '../../widgets/nimmy_dialog.dart';
+import '../../widgets/nimmy_snackbar.dart';
 import '../../widgets/status_badge.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -13,6 +16,10 @@ class SettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = context.watch<NimmyController>();
+    final authService = context.watch<AuthService>();
+    final isAuthenticated = authService.isAuthenticated;
+    final user = authService.currentUser;
+
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
       body: ListView(
@@ -24,7 +31,10 @@ class SettingsScreen extends StatelessWidget {
         ),
         children: [
           GlassCard(
-            borderColor: NimmyColors.purple.withValues(alpha: 0.35),
+            borderColor: isAuthenticated
+                ? NimmyColors.green.withValues(alpha: 0.35)
+                : NimmyColors.purple.withValues(alpha: 0.35),
+            onTap: isAuthenticated ? null : () => context.push('/auth'),
             child: Row(
               children: [
                 Container(
@@ -34,10 +44,14 @@ class SettingsScreen extends StatelessWidget {
                     shape: BoxShape.circle,
                     gradient: NimmyColors.primaryGradient,
                   ),
-                  child: const Center(
+                  child: Center(
                     child: Text(
-                      'N',
-                      style: TextStyle(
+                      isAuthenticated
+                          ? (user.displayName?.isNotEmpty == true
+                              ? user.displayName![0].toUpperCase()
+                              : user.email[0].toUpperCase())
+                          : 'N',
+                      style: const TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.w800,
                       ),
@@ -50,22 +64,82 @@ class SettingsScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Local profile',
+                        isAuthenticated
+                            ? (user.displayName ?? 'Nimmy User')
+                            : 'Local profile',
                         style: Theme.of(context).textTheme.titleLarge,
                       ),
                       const SizedBox(height: 3),
                       Text(
-                        'Authentication setup is the next foundation step.',
+                        isAuthenticated
+                            ? user.email
+                            : 'Tap to sign in & enable cloud sync.',
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                     ],
                   ),
                 ),
-                const StatusBadge(label: 'LOCAL', color: NimmyColors.amber),
+                StatusBadge(
+                  label: isAuthenticated ? 'CLOUD' : 'LOCAL',
+                  color: isAuthenticated ? NimmyColors.green : NimmyColors.amber,
+                ),
               ],
             ),
           ),
           const SizedBox(height: NimmySpacing.xl),
+          if (isAuthenticated) ...[
+            _Section(
+              title: 'Account',
+              children: [
+                _SettingsTile(
+                  icon: Icons.logout_rounded,
+                  title: 'Sign Out',
+                  subtitle: 'Disconnect cloud session and revert to local mode',
+                  onTap: () async {
+                    final confirm = await NimmyDialog.showConfirmation(
+                      context,
+                      title: 'Sign Out',
+                      message: 'Are you sure you want to sign out? Your local data will be preserved.',
+                      confirmLabel: 'Sign Out',
+                      isDestructive: false,
+                    );
+                    if (confirm == true && context.mounted) {
+                      await authService.signOut();
+                      if (context.mounted) {
+                        NimmySnackbar.showSuccess(
+                          context,
+                          'Signed out. Running in local mode.',
+                        );
+                      }
+                    }
+                  },
+                ),
+                _SettingsTile(
+                  icon: Icons.delete_forever_rounded,
+                  title: 'Delete Account',
+                  subtitle: 'Permanently remove cloud account & synced data',
+                  onTap: () async {
+                    final confirm = await NimmyDialog.showConfirmation(
+                      context,
+                      title: 'Delete Account',
+                      message: 'This action is irreversible. All synced memories, reminders, and profile data will be permanently deleted.',
+                      confirmLabel: 'Delete Account',
+                      isDestructive: true,
+                    );
+                    if (confirm == true && context.mounted) {
+                      await authService.deleteAccount();
+                      if (context.mounted) {
+                        NimmySnackbar.showSuccess(
+                          context,
+                          'Account deleted.',
+                        );
+                      }
+                    }
+                  },
+                ),
+              ],
+            ),
+          ],
           _Section(
             title: 'Nimmy',
             children: [

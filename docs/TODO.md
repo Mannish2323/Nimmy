@@ -12,9 +12,13 @@
 
 ## HIGH
 
-- [ ] Create all `docs/phases/PHASE_X.md` documents as each phase begins
-- [x] Build comprehensive test suite (expanded to 25 unit and widget tests covering logger, design system, app shell, intent parser, and tools)
-- [ ] Wire Supabase Auth UI for Phase 2
+- [ ] Create all `docs/phases/PHASE_X.md` documents as each phase begins (PHASE_0, PHASE_1, PHASE_2, PHASE_3, PHASE_4 created)
+- [x] Build comprehensive test suite (81 unit and widget tests passing with 100% success rate across mobile codebase)
+- [x] Wire Supabase Auth UI and AuthService for Phase 2
+- [x] Implement Phase 3 Task domain models (NimmyTask, NimmyProject, NimmyGoal, NimmyHabit) with local Hive & Supabase storage
+- [x] Implement Phase 3 Controlled Tools (create_task, edit_task, complete_task, delete_task, reschedule_task) with confirmation policy and audit logging
+- [x] Implement Phase 3 Task Management UI (tasks_screen.dart) with project filtering, completion toggles, and modal creation
+- [x] Implement Phase 4 Calendar + Reminders + Scheduling with multi-layer repo, 6 controlled tools, natural language intent parser, glassmorphic UI, and 81 tests passing
 - [ ] Integrate FastAPI AI brain with mobile app for Phase 5
 - [ ] Replace the partial FastAPI Gemini boundary with an authenticated provider adapter and application-owned tool proposal endpoint; no direct AI persistence or side effects.
 - [ ] Android device verification for notifications, voice, recording
@@ -26,7 +30,7 @@
 - [ ] Create Dockerfile for AI brain service
 - [ ] Add CI/CD pipeline (.github/workflows/)
 - [x] Add structured logging throughout the app (`nimmy_logger.dart` with auto-redaction and active app wiring)
-- [ ] Implement `flutter_secure_storage` for sensitive data
+- [x] Implement `flutter_secure_storage` for sensitive data (Keystore-backed auth tokens in `auth_service.dart`)
 
 ## LOW
 

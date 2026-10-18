@@ -46,8 +46,8 @@ void main() {
     test('redacts Gemini and Supabase API keys in message', () {
       // NOTE: Keys are split via concatenation to avoid triggering GitHub secret scanning
       // on this test file itself. The sanitize() function matches the full pattern at runtime.
-      final fakeGeminiKey = 'AIzaSy' + 'D9x8y7w6v5u4t3s2r1q0p_123456789';
-      final fakeSupabaseKey = 'sbp_' + '1234567890abcdef1234567890abcdef12345678';
+      final fakeGeminiKey = 'AIzaSy' + 'D9x8y7w6v5u4t3s2r1q0p_123456789'; // ignore: prefer_adjacent_string_concatenation
+      final fakeSupabaseKey = 'sbp_' + '1234567890abcdef1234567890abcdef12345678'; // ignore: prefer_adjacent_string_concatenation
       final textWithKeys = 'Using Gemini $fakeGeminiKey and Supabase $fakeSupabaseKey';
       final sanitized = NimmyLogger.sanitize(textWithKeys);
 
