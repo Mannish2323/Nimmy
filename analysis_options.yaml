@@ -1,0 +1,8 @@
+# Root analysis_options.yaml to exclude nested Flutter SDK checkout from IDE problem detection
+analyzer:
+  exclude:
+    - flutter/**
+    - .gradle_home/**
+    - .gradle-build-cache/**
+    - apps/mobile/build/**
+    - apps/mobile/android/**

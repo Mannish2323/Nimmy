@@ -19,6 +19,9 @@
 - [x] Implement Phase 3 Controlled Tools (create_task, edit_task, complete_task, delete_task, reschedule_task) with confirmation policy and audit logging
 - [x] Implement Phase 3 Task Management UI (tasks_screen.dart) with project filtering, completion toggles, and modal creation
 - [x] Implement Phase 4 Calendar + Reminders + Scheduling with multi-layer repo, 6 controlled tools, natural language intent parser, glassmorphic UI, and 81 tests passing
+- [x] Android Gradle debug build pipeline verified (`build/app/outputs/flutter-apk/app-debug.apk` 211.7 MB built clean, exit code 0)
+- [x] Web Next.js 16.3.5 Turbopack production build verified (`npm run build`, exit code 0, 5/5 static pages)
+- [x] AI Brain test suite verified (13/13 tests passing in 0.161s in `services/ai-brain/tests/test_ai_brain.py`)
 - [ ] Integrate FastAPI AI brain with mobile app for Phase 5
 - [ ] Replace the partial FastAPI Gemini boundary with an authenticated provider adapter and application-owned tool proposal endpoint; no direct AI persistence or side effects.
 - [ ] Android device verification for notifications, voice, recording

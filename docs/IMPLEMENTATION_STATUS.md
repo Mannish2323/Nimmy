@@ -15,6 +15,10 @@
 | 2026-10-18 | Flutter test suite: 81/81 tests passing (including 21 Phase 4 calendar/reminder tests, 21 Phase 3 productivity tests, and all prior regression tests). |
 | 2026-10-18 | `flutter analyze` → **No issues found** (0 errors, 0 warnings, 0 hints across entire mobile codebase). |
 | 2026-10-18 | Phase 4 Calendar + Reminders + Scheduling complete in software: `NimmyCalendarEvent` domain model, Hive/Supabase repositories, 6 controlled tools (`create_calendar_event`, `edit_calendar_event`, `reschedule_calendar_event`, `delete_calendar_event`, `reschedule_reminder`, `delete_reminder`), intent parser, reactive controller, glassmorphic `CalendarScreen` (14-day strip, agenda view, `_CreateEventSheet`), `RemindersScreen` rescheduling flow, 81/81 tests passing. Physical device alarm delivery pending hardware. |
+| 2026-10-24 | Android Gradle build pipeline unblocked & verified: accepted 8 Android SDK licenses, repaired Gradle B-Tree cache recursion with `-Xss4m`, applied `com.android.library` in `settings.gradle.kts`, resolved Kotlin infix boolean precedence in `NimmyBridgeChannel.kt`. Debug APK successfully produced: `build/app/outputs/flutter-apk/app-debug.apk` (211.7 MB, exit code 0). |
+| 2026-10-24 | Web production build verified: Next.js 16.3.5 Turbopack build succeeded in 42s (`npm run build`, exit code 0, 5/5 static pages prerendered). TypeScript check clean (0 errors). |
+| 2026-10-24 | AI Brain unit & integration test suite created and verified: 13/13 tests passing in 0.161s (`services/ai-brain/tests/test_ai_brain.py`) validating health, telemetry, confidence engine, knowledge router, conflict resolution, mistake/correction engine, timeline synthesis, and semantic memory vault. |
+| 2026-10-24 | Full Flutter regression verification: `flutter analyze --no-pub` → 0 issues found (ran in 90.5s); `flutter test` → 81/81 tests passed (100% pass rate in 23s). |
 
 ## Phase status
 

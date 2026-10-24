@@ -98,8 +98,8 @@ class NimmyBridgeChannel(private val context: Context) :
             "notificationPermission" to hasNotificationPermission(),
             "modelInstalled" to !missingAssets.contains(WakeWordAssets.NIMMY_MODEL),
             "featureModelsInstalled" to
-                !missingAssets.contains(WakeWordAssets.MEL_MODEL) &&
-                !missingAssets.contains(WakeWordAssets.EMBEDDING_MODEL),
+                (!missingAssets.contains(WakeWordAssets.MEL_MODEL) &&
+                 !missingAssets.contains(WakeWordAssets.EMBEDDING_MODEL)),
             "missingAssets" to missingAssets,
             "phrases" to listOf("Hey Nimmy", "Nimmy"),
             "requiresVisibleNotification" to true,
